@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tasbih Admin — Firebase Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#07080d;--s1:#0d0f18;--card:#11141f;--card2:#181c2d;
+  --b1:rgba(201,168,76,.14);--b2:rgba(255,255,255,.055);
+  --gold:#c9a84c;--gold2:#f0d47a;--gold3:#7a5c18;--gold4:rgba(201,168,76,.08);
+  --em:#1fc87e;--em2:#0d8a52;--em3:rgba(31,200,126,.1);
+  --red:#e05555;--red2:rgba(224,85,85,.1);
+  --blue:#4a9eff;--blue2:rgba(74,158,255,.1);
+  --t1:#ede6d4;--t2:#8a91a8;--t3:#3e4557;
+  --glow:rgba(201,168,76,.25);--glow2:rgba(201,168,76,.08);--r:13px;
+}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:"DM Sans",sans-serif;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--gold3);border-radius:4px;}
+a{color:var(--blue);}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .5s;}
+.sp-ring{width:72px;height:72px;border-radius:50%;border:2px solid var(--b1);border-top-color:var(--gold);animation:spin 1s linear infinite;display:flex;align-items:center;justify-content:center;font-size:28px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.sp-txt{font-family:"Cinzel",serif;font-size:12px;color:var(--gold);letter-spacing:3px;animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:.3;}50%{opacity:1;}}
+
+/* LOGIN */
+#loginWrap{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse 120% 80% at 50% -10%,rgba(201,168,76,.06),transparent 65%),var(--bg);}
+.lcard{width:min(400px,94vw);padding:40px 34px 34px;background:var(--card);border:1px solid var(--b1);border-radius:22px;
+  box-shadow:0 32px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);animation:up .45s cubic-bezier(.22,.68,0,1.2);}
+@keyframes up{from{opacity:0;transform:translateY(24px) scale(.97);}to{opacity:1;transform:none;}}
+.lico{font-size:42px;text-align:center;margin-bottom:10px;animation:flt 3s ease-in-out infinite;}
+@keyframes flt{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.ltit{font-family:"Cinzel",serif;font-size:19px;color:var(--gold);letter-spacing:2px;text-align:center;}
+.lsub{font-size:11px;color:var(--t3);text-align:center;margin-top:3px;margin-bottom:22px;}
+.ldiv{height:1px;background:linear-gradient(90deg,transparent,var(--b1),transparent);margin:18px 0;}
+.lf{margin-bottom:13px;}
+.lf label{display:block;font-size:10px;font-weight:700;color:var(--t2);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px;}
+.lf input{width:100%;padding:12px 14px;background:var(--s1);border:1px solid var(--b2);border-radius:10px;color:var(--t1);font-size:14px;font-family:"DM Sans",sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+.lf input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow2);}
+.lbtn{width:100%;padding:14px;margin-top:6px;background:linear-gradient(135deg,var(--gold3),var(--gold));border:none;border-radius:11px;font-family:"Cinzel",serif;font-size:13px;font-weight:700;color:#09090d;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 20px var(--glow);transition:transform .15s,box-shadow .2s;}
+.lbtn:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--glow);}
+.lerr{font-size:12px;color:var(--red);text-align:center;margin-top:10px;display:none;}
+.lhint{font-size:11px;color:var(--t3);text-align:center;margin-top:14px;line-height:1.6;}
+.lhint b{color:var(--gold);}
+
+/* APP */
+#app{display:none;min-height:100vh;}
+
+/* SIDEBAR */
+.sb{position:fixed;top:0;left:0;bottom:0;width:234px;background:var(--card);border-right:1px solid var(--b2);display:flex;flex-direction:column;z-index:200;overflow:hidden;}
+.sb::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.sb-logo{padding:24px 20px 18px;border-bottom:1px solid var(--b2);}
+.sb-logo-ico{font-size:30px;margin-bottom:6px;}
+.sb-logo-nm{font-family:"Cinzel",serif;font-size:13px;color:var(--gold);letter-spacing:2px;}
+.sb-logo-vr{font-size:10px;color:var(--t3);margin-top:1px;}
+.sb-nav{flex:1;padding:10px 9px;overflow-y:auto;}
+.sb-sec{font-size:9px;font-weight:700;color:var(--t3);letter-spacing:2.5px;text-transform:uppercase;padding:13px 11px 4px;}
+.sb-it{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--t2);transition:all .16s;margin-bottom:1px;position:relative;}
+.sb-it:hover{background:var(--card2);color:var(--t1);}
+.sb-it.on{background:linear-gradient(135deg,rgba(201,168,76,.13),rgba(201,168,76,.04));color:var(--gold);border:1px solid var(--b1);}
+.sb-it.on::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:3px;background:var(--gold);border-radius:0 2px 2px 0;}
+.sb-ico{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.sb-ft{padding:13px 9px;border-top:1px solid var(--b2);}
+.sb-usr{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border-radius:10px;margin-bottom:8px;}
+.sb-av{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--gold3),var(--gold));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.sb-un{font-size:12px;font-weight:600;color:var(--t1);}
+.sb-ur{font-size:10px;color:var(--t3);}
+.sb-out{width:100%;padding:8px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--t3);font-size:12px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .16s;}
+.sb-out:hover{border-color:var(--red);color:var(--red);}
+
+/* MAIN */
+.main{margin-left:234px;min-height:100vh;}
+.topbar{padding:14px 26px;display:flex;align-items:center;justify-content:space-between;background:rgba(7,8,13,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--b2);position:sticky;top:0;z-index:100;}
+.tb-tit{font-family:"Cinzel",serif;font-size:14px;color:var(--gold);letter-spacing:1px;}
+.tb-crb{font-size:11px;color:var(--t3);margin-top:2px;}
+.tb-r{display:flex;align-items:center;gap:14px;}
+.cdot{width:7px;height:7px;border-radius:50%;background:var(--em);box-shadow:0 0 8px var(--em2);animation:br 2.5s ease-in-out infinite;}
+.cdot.off{background:var(--t3);box-shadow:none;animation:none;}
+@keyframes br{0%,100%{opacity:1;}50%{opacity:.4;}}
+.ctxt{font-size:11px;color:var(--t2);}
+.tbtn{padding:7px 13px;border-radius:8px;border:1px solid var(--b2);background:transparent;color:var(--t2);font-size:12px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .16s;}
+.tbtn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* CONTENT */
+.content{padding:22px 24px;}
+.page{display:none;}
+.page.on{display:block;animation:pgin .22s ease;}
+@keyframes pgin{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+
+/* ALERT BANNER */
+.alert{background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.04));border:1px solid var(--b1);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:none;}
+.alert.show{display:flex;gap:12px;align-items:flex-start;}
+.alert-ico{font-size:20px;flex-shrink:0;}
+.alert-tt{font-size:13px;font-weight:600;color:var(--gold);margin-bottom:3px;}
+.alert-ds{font-size:12px;color:var(--t2);line-height:1.6;}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.sc{background:var(--card);border:1px solid var(--b2);border-radius:var(--r);padding:18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
+.sc:hover{transform:translateY(-2px);border-color:var(--b1);}
+.sc::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;}
+.sc.go::after{background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.sc.gr::after{background:linear-gradient(90deg,transparent,var(--em),transparent);}
+.sc.bl::after{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.sc.rd::after{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.sc-ico{font-size:24px;margin-bottom:11px;}
+.sc-val{font-family:"Cinzel",serif;font-size:28px;color:var(--gold2);font-weight:700;line-height:1;}
+.sc-lbl{font-size:12px;color:var(--t2);margin-top:4px;}
+.sc-sub{font-size:10px;color:var(--t3);margin-top:2px;}
+
+/* PANEL */
+.pnl{background:var(--card);border:1px solid var(--b2);border-radius:var(--r);padding:20px;margin-bottom:16px;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:15px;gap:10px;}
+.pt{font-family:"Cinzel",serif;font-size:13px;color:var(--gold);letter-spacing:.5px;}
+.ps{font-size:11px;color:var(--t3);margin-top:3px;}
+
+/* FORM */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.ff{display:flex;flex-direction:column;gap:5px;}
+.ff.full{grid-column:1/-1;}
+.flb{font-size:10px;font-weight:700;color:var(--t2);letter-spacing:1px;text-transform:uppercase;}
+.fin,.fta,.fse{padding:10px 13px;background:var(--s1);border:1px solid var(--b2);border-radius:9px;color:var(--t1);font-size:13px;font-family:"DM Sans",sans-serif;outline:none;transition:border-color .18s,box-shadow .18s;width:100%;}
+.fin:focus,.fta:focus,.fse:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow2);}
+.fta{resize:vertical;min-height:84px;}
+.fse option{background:var(--card);}
+.fhi{font-size:11px;color:var(--t3);}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:9px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .16s;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{transform:scale(.97);}
+.btn-g{background:linear-gradient(135deg,var(--gold3),var(--gold));color:#09090d;box-shadow:0 3px 14px var(--glow);}
+.btn-g:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--glow);}
+.btn-em{background:linear-gradient(135deg,var(--em2),var(--em));color:#fff;}
+.btn-em:hover{transform:translateY(-2px);}
+.btn-gh{background:transparent;color:var(--t2);border:1px solid var(--b2);}
+.btn-gh:hover{border-color:var(--gold);color:var(--gold);}
+.btn-dn{background:var(--red2);color:var(--red);border:1px solid rgba(224,85,85,.25);}
+.btn-dn:hover{background:rgba(224,85,85,.2);}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:7px;}
+
+/* TABLE */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:8px 13px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--b2);white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.024);transition:background .14s;}
+tbody tr:hover{background:rgba(255,255,255,.018);}
+tbody td{padding:10px 13px;font-size:13px;vertical-align:middle;}
+.tar{font-family:"Amiri",serif;font-size:18px;direction:rtl;color:var(--gold2);}
+
+/* BADGE */
+.bdg{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;}
+.b-gr{background:var(--em3);color:var(--em);border:1px solid rgba(31,200,126,.25);}
+.b-rd{background:var(--red2);color:var(--red);border:1px solid rgba(224,85,85,.25);}
+.b-go{background:var(--gold4);color:var(--gold);border:1px solid var(--b1);}
+.b-bl{background:var(--blue2);color:var(--blue);border:1px solid rgba(74,158,255,.25);}
+
+/* TOGGLE */
+.tog{display:flex;align-items:center;gap:9px;}
+.ts{position:relative;width:40px;height:22px;flex-shrink:0;}
+.ts input{display:none;}
+.tsl{position:absolute;inset:0;background:var(--card2);border-radius:11px;cursor:pointer;transition:.26s;border:1px solid var(--b2);}
+.tsl::before{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;border-radius:50%;background:var(--t3);transition:.26s;}
+.ts input:checked+.tsl{background:linear-gradient(135deg,var(--em2),var(--em));border-color:var(--em);}
+.ts input:checked+.tsl::before{transform:translateX(18px);background:#fff;}
+
+/* CHART */
+.chart{display:flex;align-items:flex-end;gap:5px;height:120px;padding:4px 0 0;}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height .5s cubic-bezier(.34,1.56,.64,1);}
+.bar.go{background:linear-gradient(180deg,var(--gold2),var(--gold3));}
+.bar.em{background:linear-gradient(180deg,var(--em),var(--em2));}
+.bday{font-size:9px;color:var(--t3);}
+.bnum{font-size:9px;color:var(--t2);}
+
+/* NOTIF PREVIEW */
+.npw{background:var(--s1);border:1px solid var(--b2);border-radius:10px;padding:12px;margin-top:12px;}
+.nplb{font-size:9px;font-weight:700;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.npc{background:var(--card2);border-radius:9px;padding:11px;display:flex;align-items:flex-start;gap:11px;}
+
+/* SETUP STEPS */
+.step{display:flex;gap:14px;padding:15px 0;border-bottom:1px solid var(--b2);}
+.step:last-child{border:none;padding-bottom:0;}
+.stn{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold3),var(--gold));display:flex;align-items:center;justify-content:center;font-family:"Cinzel",serif;font-size:11px;color:#09090d;font-weight:700;flex-shrink:0;margin-top:2px;}
+.st-tt{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px;}
+.st-ds{font-size:12px;color:var(--t2);line-height:1.7;}
+.code{background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 13px;font-size:11px;color:var(--em);font-family:"Courier New",monospace;margin-top:8px;overflow-x:auto;white-space:pre;line-height:1.6;}
+.tipbx{background:var(--gold4);border:1px solid var(--b1);border-radius:10px;padding:13px 15px;margin-top:12px;}
+.tipbx p{font-size:12px;color:var(--t2);line-height:1.7;}
+.tipbx b{color:var(--gold);}
+
+/* 2 COL */
+.twoc{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* EMPTY */
+.empty{text-align:center;padding:38px 20px;color:var(--t3);}
+.ei{font-size:30px;opacity:.3;margin-bottom:8px;}
+.et{font-size:12px;line-height:1.7;}
+
+/* CONFIRM */
+#conf{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;}
+#conf.open{display:flex;}
+.cbox{background:var(--card);border:1px solid var(--b1);border-radius:16px;padding:24px;width:310px;animation:up .22s ease;}
+.ct{font-size:14px;font-weight:600;margin-bottom:7px;}
+.cb{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:18px;}
+.cr{display:flex;gap:9px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;z-index:9999;background:var(--card2);border:1px solid var(--b1);border-radius:11px;padding:11px 16px;font-size:13px;transform:translateY(14px);opacity:0;transition:all .28s;pointer-events:none;max-width:300px;}
+#toast.show{transform:none;opacity:1;}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="sp-ring"><span style="animation:none">📿</span></div>
+  <div class="sp-txt">TASBIH ADMIN</div>
+</div>
+
+<div id="loginWrap">
+  <div class="lcard">
+    <div class="lico">📿</div>
+    <div class="ltit">TASBIH ADMIN</div>
+    <div class="lsub">Firebase Control Panel</div>
+    <div class="ldiv"></div>
+    <div class="lf"><label>Username</label><input id="lu" type="text" placeholder="admin" autocomplete="off" onkeydown="if(event.key==='Enter')login()"></div>
+    <div class="lf"><label>Password</label><input id="lp" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"></div>
+    <button class="lbtn" onclick="login()">Sign In &rarr;</button>
+    <div class="lerr" id="lerr">Wrong username or password</div>
+    <div class="lhint">Default: <b>admin</b> / <b>tasbih786</b><br>Login ke baad Settings mein change karein</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="sb">
+    <div class="sb-logo">
+      <div class="sb-logo-ico">📿</div>
+      <div class="sb-logo-nm">TASBIH</div>
+      <div class="sb-logo-vr">Firebase Admin v1.0</div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">Overview</div>
+      <div class="sb-it on" onclick="go('dash',this)"><span class="sb-ico">📊</span>Dashboard</div>
+      <div class="sb-sec">Content</div>
+      <div class="sb-it" onclick="go('notif',this)"><span class="sb-ico">🔔</span>Notifications</div>
+      <div class="sb-it" onclick="go('dhikr',this)"><span class="sb-ico">📿</span>Dhikr Manager</div>
+      <div class="sb-it" onclick="go('hadith',this)"><span class="sb-ico">📚</span>Hadith of Day</div>
+      <div class="sb-sec">System</div>
+      <div class="sb-it" onclick="go('ads',this)"><span class="sb-ico">💰</span>Ad Settings</div>
+      <div class="sb-it" onclick="go('setup',this)"><span class="sb-ico">🚀</span>Setup Guide</div>
+      <div class="sb-it" onclick="go('sett',this)"><span class="sb-ico">⚙️</span>Settings</div>
+    </div>
+    <div class="sb-ft">
+      <div class="sb-usr">
+        <div class="sb-av">👑</div>
+        <div><div class="sb-un" id="sbun">Admin</div><div class="sb-ur">Super Admin</div></div>
+      </div>
+      <button class="sb-out" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div><div class="tb-tit" id="ptit">Dashboard</div><div class="tb-crb" id="pcrb">Digital Tasbih Admin</div></div>
+      <div class="tb-r">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div class="cdot off" id="cdot"></div>
+          <div class="ctxt" id="ctxt">Not connected</div>
+        </div>
+        <button class="tbtn" onclick="checkFB()">Test Firebase</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page on" id="pg-dash">
+        <div class="alert" id="setupAlert">
+          <div class="alert-ico">⚠️</div>
+          <div>
+            <div class="alert-tt">Firebase Configure Nahi Hai</div>
+            <div class="alert-ds">Settings mein Firebase Database URL aur API Key paste karo. <span style="color:var(--gold);cursor:pointer;" onclick="go('setup',document.querySelector('[onclick*=setup]'))">Setup Guide dekho</span></div>
+          </div>
+        </div>
+        <div class="sg">
+          <div class="sc go"><div class="sc-ico">🔔</div><div class="sc-val" id="s1">—</div><div class="sc-lbl">Notifications</div><div class="sc-sub">Total saved</div></div>
+          <div class="sc gr"><div class="sc-ico">📿</div><div class="sc-val" id="s2">—</div><div class="sc-lbl">Extra Dhikr</div><div class="sc-sub">Admin added</div></div>
+          <div class="sc bl"><div class="sc-ico">📚</div><div class="sc-val" id="s3">—</div><div class="sc-lbl">Hadith</div><div class="sc-sub">Active in app</div></div>
+          <div class="sc rd"><div class="sc-ico">🔥</div><div class="sc-val" id="s4">—</div><div class="sc-lbl">Firebase</div><div class="sc-sub" id="s4s">Status</div></div>
+        </div>
+        <div class="twoc">
+          <div class="pnl">
+            <div class="ph"><div><div class="pt">Quick Actions</div></div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button class="btn btn-g" style="justify-content:flex-start;" onclick="go('notif',document.querySelector('[onclick*=notif]'))">🔔 Notification Bhejein</button>
+              <button class="btn btn-em" style="justify-content:flex-start;" onclick="go('dhikr',document.querySelector('[onclick*=dhikr]'))">📿 Naya Dhikr Add Karein</button>
+              <button class="btn btn-gh" style="justify-content:flex-start;" onclick="go('hadith',document.querySelector('[onclick*=hadith]'))">📚 Hadith Update Karein</button>
+              <button class="btn btn-gh" style="justify-content:flex-start;" onclick="go('setup',document.querySelector('[onclick*=setup]'))">🚀 Setup Guide</button>
+            </div>
+          </div>
+          <div class="pnl">
+            <div class="ph"><div><div class="pt">System Status</div></div><button class="btn btn-gh btn-sm" onclick="checkFB();loadDash();">Refresh</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+              <div style="background:var(--s1);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:18px;margin-bottom:5px;">🔥</div><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">Firebase</div><div class="bdg b-go" id="st1">Not Set</div></div>
+              <div style="background:var(--s1);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:18px;margin-bottom:5px;">📢</div><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">Notif</div><div class="bdg b-gr">Ready</div></div>
+              <div style="background:var(--s1);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:18px;margin-bottom:5px;">💰</div><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">AdMob</div><div class="bdg b-go" id="st3">Not Set</div></div>
+            </div>
+            <div style="margin-top:14px;">
+              <div class="ph" style="margin-bottom:10px;"><div><div class="pt" style="font-size:11px;">Recent Activity</div></div></div>
+              <div class="chart" id="chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS -->
+      <div class="page" id="pg-notif">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📢 Notification Bhejein</div><div class="ps">Sabhi users ko automatically milegi</div></div></div>
+          <div class="fg">
+            <div class="ff"><div class="flb">Title *</div><input class="fin" id="nt" placeholder="Juma Mubarak!" oninput="prvN()"></div>
+            <div class="ff"><div class="flb">Emoji</div><input class="fin" id="ni" value="📿" oninput="prvN()"></div>
+            <div class="ff full"><div class="flb">Message *</div><textarea class="fta" id="nb" placeholder="Notification ka paigam likhein..." oninput="prvN()"></textarea></div>
+            <div class="ff"><div class="flb">Language</div>
+              <select class="fse" id="nl"><option value="all">Sabhi</option><option value="hi">Hindi</option><option value="en">English</option><option value="ur">Urdu</option><option value="ar">Arabic</option><option value="bn">Bengali</option></select></div>
+            <div class="ff"><div class="flb">Status</div><div class="fin" style="display:flex;align-items:center;"><div class="tog"><label class="ts"><input type="checkbox" id="na" checked><span class="tsl"></span></label><span style="font-size:12px;">Active</span></div></div></div>
+          </div>
+          <div class="npw"><div class="nplb">LIVE PREVIEW</div>
+            <div class="npc">
+              <div style="font-size:22px;flex-shrink:0;" id="pni">📿</div>
+              <div><div style="font-size:13px;font-weight:600;color:var(--t1);" id="pnt">Title</div>
+              <div style="font-size:12px;color:var(--t2);margin-top:3px;" id="pnb">Message...</div>
+              <div style="font-size:10px;color:var(--t3);margin-top:4px;">Digital Tasbih • Abhi</div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;">
+            <button class="btn btn-g" onclick="sendNotif()">🔔 Save &amp; Send</button>
+            <button class="btn btn-gh" onclick="clrN()">Clear</button>
+          </div>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📋 History</div></div><button class="btn btn-gh btn-sm" onclick="loadNotifs()">Refresh</button></div>
+          <div class="tw"><table><thead><tr><th>Title</th><th>Message</th><th>Lang</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="ntb"><tr><td colspan="5"><div class="empty"><div class="ei">🔔</div><div class="et">Koi notification nahi hai.</div></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- DHIKR -->
+      <div class="page" id="pg-dhikr">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📿 Naya Dhikr Add Karein</div><div class="ps">App mein automatic — update ki zaroorat nahi</div></div></div>
+          <div class="fg">
+            <div class="ff"><div class="flb">ID *</div><input class="fin" id="di" placeholder="tauba"><div class="fhi">Lowercase, no spaces</div></div>
+            <div class="ff"><div class="flb">Emoji</div><input class="fin" id="dc" placeholder="🤲"></div>
+            <div class="ff full"><div class="flb">Arabic *</div><input class="fin" id="da" placeholder="تُبْتُ إِلَى اللّٰہ" style="direction:rtl;font-family:Amiri,serif;font-size:20px;"></div>
+            <div class="ff"><div class="flb">Hindi</div><input class="fin" id="dh" placeholder="तौबा"></div>
+            <div class="ff"><div class="flb">English</div><input class="fin" id="de" placeholder="Tawbah"></div>
+            <div class="ff"><div class="flb">Urdu</div><input class="fin" id="du" placeholder="توبہ" style="direction:rtl;"></div>
+            <div class="ff"><div class="flb">Bengali</div><input class="fin" id="db" placeholder="তওবা"></div>
+            <div class="ff"><div class="flb">Hindi Meaning</div><input class="fin" id="dmh" placeholder="मैं तौबा करता हूँ"></div>
+            <div class="ff"><div class="flb">English Meaning</div><input class="fin" id="dme" placeholder="I repent to Allah"></div>
+            <div class="ff"><div class="flb">Default Target</div><input class="fin" id="dt" type="number" value="100"></div>
+            <div class="ff"><div class="flb">Status</div><div class="fin" style="display:flex;align-items:center;"><div class="tog"><label class="ts"><input type="checkbox" id="dact" checked><span class="tsl"></span></label><span style="font-size:12px;">Active</span></div></div></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;">
+            <button class="btn btn-em" onclick="saveDhikr()">Save Dhikr</button>
+            <button class="btn btn-gh" onclick="clrD()">Clear</button>
+          </div>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📋 Extra Dhikr List</div></div><button class="btn btn-gh btn-sm" onclick="loadDList()">Refresh</button></div>
+          <div class="tw"><table><thead><tr><th>Arabic</th><th>Hindi</th><th>English</th><th>Target</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="dtb"><tr><td colspan="6"><div class="empty"><div class="ei">📿</div><div class="et">Koi extra dhikr nahi hai.</div></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- HADITH -->
+      <div class="page" id="pg-hadith">
+        <div class="pnl">
+          <div class="ph">
+            <div><div class="pt">📚 Hadith of the Day</div><div class="ps">App mein hadith card dikhayein</div></div>
+            <div class="tog"><label class="ts"><input type="checkbox" id="hat" onchange="togH()"><span class="tsl"></span></label><span style="font-size:12px;color:var(--t2);">Show in App</span></div>
+          </div>
+          <div class="fg">
+            <div class="ff full"><div class="flb">Arabic Text</div><textarea class="fta" id="har" placeholder="Arabic hadith..." style="direction:rtl;font-family:Amiri,serif;font-size:16px;min-height:65px;" oninput="prvH()"></textarea></div>
+            <div class="ff full"><div class="flb">Translation *</div><textarea class="fta" id="htx" placeholder="Hadith ka tarjuma likhein..." oninput="prvH()"></textarea></div>
+            <div class="ff"><div class="flb">Reference</div><input class="fin" id="hrf" placeholder="Sahih Bukhari 6405" oninput="prvH()"></div>
+            <div class="ff"><div class="flb">Language</div><select class="fse" id="hlng"><option value="hi">Hindi</option><option value="en">English</option><option value="ur">Urdu</option></select></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;">
+            <button class="btn btn-g" onclick="saveHadith()">📚 Save &amp; Publish</button>
+            <button class="btn btn-dn" onclick="deactH()">Remove from App</button>
+          </div>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">Preview</div></div></div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:13px;padding:16px;max-width:380px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1.5px;text-align:center;margin-bottom:10px;">📚 HADITH OF THE DAY</div>
+            <div style="font-family:Amiri,serif;font-size:16px;color:var(--t1);line-height:1.7;margin-bottom:9px;direction:rtl;text-align:right;" id="harp">Arabic...</div>
+            <div style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:8px;" id="htxp">Translation...</div>
+            <div style="font-size:11px;color:var(--em);background:var(--em3);padding:5px 11px;border-radius:7px;display:inline-block;" id="hrfp">Reference</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADS -->
+      <div class="page" id="pg-ads">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">💰 AdMob Configuration</div><div class="ps">Ad IDs set karein</div></div></div>
+          <div class="fg">
+            <div class="ff full"><div class="flb">AdMob App ID (Android)</div><input class="fin" id="aai" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"><div class="fhi">admob.google.com → Apps → App ID</div></div>
+            <div class="ff full"><div class="flb">Banner Ad Unit ID</div><input class="fin" id="abi" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"></div>
+            <div class="ff"><div class="flb">Test Mode</div><div class="fin" style="display:flex;align-items:center;"><div class="tog"><label class="ts"><input type="checkbox" id="atm" checked><span class="tsl"></span></label><span style="font-size:12px;">Development mein ON rakhein</span></div></div></div>
+          </div>
+          <button class="btn btn-g" style="margin-top:13px;" onclick="saveAds()">Save Ad Settings</button>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">Generated Code</div><div class="ps">digital-tasbih.html mein paste karein</div></div><button class="btn btn-gh btn-sm" onclick="cpAd()">Copy</button></div>
+          <div class="code" id="adcode">Upar Ad IDs save karo to generate</div>
+        </div>
+      </div>
+
+      <!-- SETUP GUIDE -->
+      <div class="page" id="pg-setup">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">🚀 Firebase + Play Store Setup</div><div class="ps">Step by step — mostly free</div></div></div>
+
+          <div class="step"><div class="stn">1</div><div>
+            <div class="st-tt">Firebase Project Banao</div>
+            <div class="st-ds"><a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → "Add project" → naam: <b>digital-tasbih</b> → Google Analytics ON karo → Create Project</div>
+          </div></div>
+
+          <div class="step"><div class="stn">2</div><div>
+            <div class="st-tt">Realtime Database Enable Karo</div>
+            <div class="st-ds">Firebase Console → Build → Realtime Database → Create Database → Location: <b>asia-southeast1 (Singapore)</b> → <b>Start in test mode</b> → Enable</div>
+            <div class="code">URL milega:
+https://digital-tasbih-default-rtdb.asia-southeast1.firebasedatabase.app</div>
+          </div></div>
+
+          <div class="step"><div class="stn">3</div><div>
+            <div class="st-tt">Web App Add Karo — Config Copy Karo</div>
+            <div class="st-ds">Project Overview → "Add app" → Web icon → nickname: tasbih-web → Register → <b>firebaseConfig copy karo</b> → Project Settings mein jaake <b>Web API Key</b> bhi note karo</div>
+            <div class="code">firebaseConfig = {
+  apiKey: "AIzaSy...",          ← Web API Key
+  databaseURL: "https://...",   ← sabse zaroori
+  projectId: "digital-tasbih",
+  ...
+}</div>
+          </div></div>
+
+          <div class="step"><div class="stn">4</div><div>
+            <div class="st-tt">digital-tasbih.html Mein Config Daalo</div>
+            <div class="st-ds">HTML file mein ye section dhundo:</div>
+            <div class="code">const FIREBASE_CONFIG = {
+  apiKey:            "APNI_VALUE",
+  authDomain:        "APNI_VALUE",
+  databaseURL:       "APNI_VALUE",
+  projectId:         "APNI_VALUE",
+  storageBucket:     "APNI_VALUE",
+  messagingSenderId: "APNI_VALUE",
+  appId:             "APNI_VALUE"
+};</div>
+          </div></div>
+
+          <div class="step"><div class="stn">5</div><div>
+            <div class="st-tt">Admin Panel Mein Firebase Config Daalo</div>
+            <div class="st-ds">Is admin panel → <b>Settings tab</b> → Firebase Database URL aur Web API Key paste karo → Save → "Test Firebase" se verify karo</div>
+          </div></div>
+
+          <div class="step"><div class="stn">6</div><div>
+            <div class="st-tt">Database Security Rules Set Karo</div>
+            <div class="st-ds">Firebase Console → Realtime Database → Rules:</div>
+            <div class="code">{
+  "rules": {
+    ".read": true,
+    ".write": false
+  }
+}</div>
+            <div class="st-ds" style="margin-top:6px;">Public read (app ke liye), write sirf Console se hoga.</div>
+          </div></div>
+
+          <div class="step"><div class="stn">7</div><div>
+            <div class="st-tt">GitHub Pages Pe Host Karo (Free)</div>
+            <div class="st-ds"><a href="https://github.com" target="_blank">github.com</a> → New repo: <b>digital-tasbih</b> → Public → <b>index.html</b> naam se upload → Settings → Pages → main branch → Save<br>URL: <code style="color:var(--em);">USERNAME.github.io/digital-tasbih</code></div>
+          </div></div>
+
+          <div class="step"><div class="stn">8</div><div>
+            <div class="st-tt">manifest.json Upload Karo</div>
+            <div class="code">{
+  "name": "Digital Tasbih",
+  "short_name": "Tasbih",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#c9a84c",
+  "background_color": "#0a0c10",
+  "icons": [
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png"}
+  ]
+}</div>
+          </div></div>
+
+          <div class="step"><div class="stn">9</div><div>
+            <div class="st-tt">Android App Banao — PWABuilder (Free)</div>
+            <div class="st-ds"><a href="https://pwabuilder.com" target="_blank">pwabuilder.com</a> → GitHub URL daalo → Package for Android → Download AAB</div>
+          </div></div>
+
+          <div class="step"><div class="stn">10</div><div>
+            <div class="st-tt">Play Store Publish ($25 ek baar)</div>
+            <div class="st-ds"><a href="https://play.google.com/console" target="_blank">play.google.com/console</a> → $25 account → Create App → AAB upload → Submit → 3-7 din</div>
+          </div></div>
+
+          <div class="tipbx"><p>
+            <b>Admin Panel URL:</b> tasbih-admin.html bhi GitHub mein upload karo.<br>
+            URL: <code>USERNAME.github.io/digital-tasbih/admin.html</code><br><br>
+            <b>Firebase Free Limits:</b> 1GB Storage + 10GB/month bandwidth = lakhon users ke liye kaafi!<br>
+            <b>Total Cost:</b> Firebase Free + GitHub Free + PWABuilder Free + Play Store $25 = <b>Sirf $25!</b>
+          </p></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="pg-sett">
+        <div class="twoc">
+          <div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">🔥 Firebase Config</div><div class="ps">Database URL + API Key</div></div></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">Firebase Database URL</div><input class="fin" id="sfurl" placeholder="https://YOUR-PROJECT-default-rtdb.firebaseio.com"><div class="fhi">Realtime Database page mein milta hai</div></div>
+              <div class="ff" style="margin-bottom:13px;"><div class="flb">Web API Key</div><input class="fin" id="sfkey" placeholder="AIzaSy..."><div class="fhi">Project Settings → General → Web API Key</div></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-g" onclick="saveFBCfg()">Save Config</button>
+                <button class="btn btn-gh" onclick="checkFB()">Test Connection</button>
+              </div>
+            </div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">🔐 Admin Password</div></div></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">New Username</div><input class="fin" id="su" placeholder="New username"></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">New Password</div><input class="fin" type="password" id="sp" placeholder="New password"></div>
+              <div class="ff" style="margin-bottom:13px;"><div class="flb">Confirm Password</div><input class="fin" type="password" id="spc" placeholder="Repeat password"></div>
+              <button class="btn btn-g" onclick="saveCreds()">Update Password</button>
+            </div>
+          </div>
+          <div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">📱 App Config</div><div class="ps">Store links — publish hone ke baad</div></div></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">Play Store URL</div><input class="fin" id="cps" placeholder="https://play.google.com/store/apps/details?id=..."></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">App Store URL (iOS)</div><input class="fin" id="cas" placeholder="https://apps.apple.com/app/..."></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">Notif Re-ask (Days)</div><input class="fin" id="cnd" type="number" value="3"></div>
+              <div class="ff" style="margin-bottom:13px;"><div class="flb">Rate Prompt (After N Opens)</div><input class="fin" id="cro" type="number" value="5"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-g" onclick="saveAppCfg()">Save</button>
+                <button class="btn btn-gh" onclick="cpCfg()">Copy for HTML</button>
+              </div>
+              <div class="code" id="gcfg" style="margin-top:10px;">// Save karo to generate</div>
+            </div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">About</div></div></div>
+              <div style="font-size:12px;color:var(--t2);line-height:1.9;">
+                Digital Tasbih Admin v1.0<br>
+                Database: <span style="color:var(--em);">Firebase Realtime DB</span><br>
+                Hosting: <span style="color:var(--blue);">GitHub Pages</span><br>
+                App: <span style="color:var(--gold);">PWA → TWA → Play Store</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="conf"><div class="cbox">
+  <div class="ct" id="ct">Sure?</div>
+  <div class="cb" id="cb">Ye nahi palti.</div>
+  <div class="cr">
+    <button class="btn btn-gh" onclick="clsC()">Cancel</button>
+    <button class="btn btn-dn" id="cok">Confirm</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+let FBURL='',FBKEY='';
+function getCreds(){return{u:localStorage.getItem('au')||'admin',p:localStorage.getItem('ap')||'tasbih786'};}
+
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    const sp=document.getElementById('splash');
+    sp.style.opacity='0';
+    setTimeout(()=>{sp.remove();document.getElementById('loginWrap').style.display='flex';},500);
+  },1300);
+});
+
+function login(){
+  const u=G('lu').value.trim(),p=G('lp').value,c=getCreds();
+  if(u===c.u&&p===c.p){
+    G('loginWrap').style.display='none';
+    G('app').style.display='block';
+    G('sbun').textContent=u;
+    init();
+  } else {
+    const e=G('lerr');e.style.display='block';G('lp').value='';
+    setTimeout(()=>e.style.display='none',3000);
+    G('lcard')||document.querySelector('.lcard');
+    const card=document.querySelector('.lcard');
+    card.style.animation='shk .3s ease';
+    setTimeout(()=>card.style.animation='',400);
+  }
+}
+function logout(){if(!confirm('Logout?'))return;G('app').style.display='none';G('loginWrap').style.display='flex';G('lu').value='';G('lp').value='';}
+
+const sty=document.createElement('style');
+sty.textContent='@keyframes shk{0%,100%{transform:none}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}';
+document.head.appendChild(sty);
+
+function init(){
+  FBURL=localStorage.getItem('fburl')||'';
+  FBKEY=localStorage.getItem('fbkey')||'';
+  ldInputs();drawChart();
+  if(FBURL&&FBKEY){checkFB();}
+  else{G('setupAlert').classList.add('show');G('cdot').classList.add('off');G('ctxt').textContent='Configure karo';}
+}
+
+function ldInputs(){
+  const ids={sfurl:'fburl',sfkey:'fbkey',cps:'cps',cas:'cas',cnd:'cnd',cro:'cro',aai:'adapp',abi:'adban'};
+  Object.entries(ids).forEach(([el,key])=>{const e=G(el);if(e)e.value=localStorage.getItem(key)||'';});
+  if(G('cnd')&&!localStorage.getItem('cnd'))G('cnd').value='3';
+  if(G('cro')&&!localStorage.getItem('cro'))G('cro').value='5';
+  const aa=localStorage.getItem('adapp')||'',ab=localStorage.getItem('adban')||'';
+  if(aa||ab)genAd(aa,ab);
+  if(aa&&G('st3')){G('st3').textContent='Configured';G('st3').className='bdg b-gr';}
+}
+
+const TTLS={dash:'Dashboard',notif:'Notifications',dhikr:'Dhikr Manager',hadith:'Hadith of Day',ads:'Ad Settings',setup:'Setup Guide',sett:'Settings'};
+function go(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.sb-it').forEach(i=>i.classList.remove('on'));
+  G('pg-'+id).classList.add('on');
+  if(el)el.classList.add('on');
+  G('ptit').textContent=TTLS[id]||id;
+  G('pcrb').textContent='Digital Tasbih → '+(TTLS[id]||id);
+}
+
+function fbQ(path){return FBURL+path+'.json?auth='+FBKEY;}
+async function fbGET(path){try{const r=await fetch(fbQ(path));if(!r.ok)throw new Error(r.status);return await r.json();}catch(e){toast('Firebase Error: '+e.message,'err');return null;}}
+async function fbPOST(path,data){try{const r=await fetch(fbQ(path),{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});if(!r.ok)throw new Error(r.status);return await r.json();}catch(e){toast('Firebase Error: '+e.message,'err');return null;}}
+async function fbPUT(path,data){try{const r=await fetch(fbQ(path),{method:'PUT',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});if(!r.ok)throw new Error(r.status);return await r.json();}catch(e){toast('Firebase Error: '+e.message,'err');return null;}}
+async function fbPATCH(path,data){try{const r=await fetch(fbQ(path),{method:'PATCH',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});if(!r.ok)throw new Error(r.status);return await r.json();}catch(e){toast('Firebase Error: '+e.message,'err');return null;}}
+async function fbDEL(path){try{const r=await fetch(fbQ(path),{method:'DELETE'});if(!r.ok)throw new Error(r.status);return true;}catch(e){toast('Firebase Error: '+e.message,'err');return null;}}
+
+async function checkFB(){
+  if(!FBURL||!FBKEY){toast('Settings mein Firebase config daalo','warn');return;}
+  G('ctxt').textContent='Connecting...';
+  const r=await fbGET('/.info/connected');
+  const ok=(r!==null);
+  G('cdot').classList.toggle('off',!ok);
+  G('ctxt').textContent=ok?'Firebase Connected':'Connection Failed';
+  const st=G('st1');if(st){st.textContent=ok?'Connected':'Error';st.className=ok?'bdg b-gr':'bdg b-rd';}
+  const s4=G('s4');if(s4)s4.textContent=ok?'OK':'ERR';
+  const s4s=G('s4s');if(s4s)s4s.textContent=ok?'Connected':'Failed';
+  if(ok){G('setupAlert').classList.remove('show');loadDash();}
+}
+
+async function loadDash(){
+  const [n,d,h]=await Promise.all([fbGET('/notifications'),fbGET('/extra_dhikr'),fbGET('/hadith')]);
+  if(G('s1'))G('s1').textContent=n&&typeof n==='object'?Object.keys(n).length:0;
+  if(G('s2'))G('s2').textContent=d&&typeof d==='object'?Object.keys(d).length:0;
+  if(G('s3'))G('s3').textContent=(h&&h.active)?1:0;
+}
+
+function drawChart(){
+  const days=['M','T','W','T','F','S','S'],v=[2,1,3,1,4,3,2],mx=4;
+  G('chart').innerHTML=days.map((d,i)=>'<div class="bc"><div class="bnum">'+v[i]+'</div><div class="bar '+(i>=4?'em':'go')+'" style="height:'+Math.round(v[i]/mx*100)+'px"></div><div class="bday">'+d+'</div></div>').join('');
+}
+
+function prvN(){G('pnt').textContent=G('nt').value||'Title';G('pnb').textContent=G('nb').value||'Message...';G('pni').textContent=G('ni').value||'📿';}
+
+async function sendNotif(){
+  const t=G('nt').value.trim(),b=G('nb').value.trim();
+  if(!t||!b){toast('Title aur Message zaroori hain','warn');return;}
+  const r=await fbPOST('/notifications',{title:t,body:b,icon:G('ni').value.trim()||'📿',lang:G('nl').value||'all',active:G('na').checked,timestamp:Date.now()});
+  if(r){toast('Notification save ho gayi!');clrN();loadNotifs();loadDash();}
+}
+
+async function loadNotifs(){
+  const data=await fbGET('/notifications');const tb=G('ntb');
+  if(!data||typeof data!=='object'||!Object.keys(data).length){tb.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">🔔</div><div class="et">Koi notification nahi hai.</div></div></td></tr>';return;}
+  const entries=Object.entries(data).sort((a,b)=>(b[1].timestamp||0)-(a[1].timestamp||0));
+  window._nKeys=Object.keys(data);
+  var html='';
+  entries.forEach(function(entry){
+    var k=entry[0],n=entry[1];
+    html+='<tr>';
+    html+='<td><b>'+(n.icon||'')+' '+(n.title||'')+'</b></td>';
+    html+='<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t2);">'+(n.body||'')+'</td>';
+    html+='<td><span class="bdg b-bl">'+(n.lang||'all')+'</span></td>';
+    html+='<td><span class="bdg '+(n.active?'b-gr':'b-rd')+'">'+(n.active?'Active':'Off')+'</span></td>';
+    html+='<td style="display:flex;gap:5px;">';
+    html+='<button class="btn btn-gh btn-sm" data-k="'+k+'" data-a="'+(n.active?0:1)+'" onclick="togNBtn(this)">'+(n.active?'Off':'On')+'</button>';
+    html+='<button class="btn btn-dn btn-sm" data-k="'+k+'" onclick="delNBtn(this)">Del</button>';
+    html+='</td></tr>';
+  });
+  tb.innerHTML=html;
+}
+
+async function togN(k,a){await fbPATCH('/notifications/'+k,{active:a});toast(a?'Activated':'Deactivated');loadNotifs();}
+function togNBtn(btn){var k=btn.getAttribute('data-k');var a=btn.getAttribute('data-a')==='1';togN(k,a);}
+function delNBtn(btn){var k=btn.getAttribute('data-k');delN(k);}
+function delN(k){showConf('Delete?','Permanently delete ho jaayegi.',async function(){await fbDEL('/notifications/'+k);toast('Deleted');loadNotifs();loadDash();});}
+function delDBtn(btn){var k=btn.getAttribute('data-k');delD(k);}
+function clrN(){['nt','nb'].forEach(i=>G(i).value='');G('ni').value='📿';prvN();}
+
+async function saveDhikr(){
+  const id=V('di'),ar=V('da');
+  if(!id){toast('ID zaroori hai','warn');return;}
+  if(!ar){toast('Arabic text zaroori hai','warn');return;}
+  const r=await fbPUT('/extra_dhikr/'+id,{id,ar,lo:{hi:V('dh'),en:V('de'),ur:V('du'),ar:V('da'),bn:V('db')},me:{hi:V('dmh'),en:V('dme'),ur:'',ar:'',bn:''},icon:V('dc')||'📿',tgt:parseInt(V('dt'))||100,active:G('dact').checked});
+  if(r){toast('Dhikr save ho gaya!');clrD();loadDList();loadDash();}
+}
+
+async function loadDList(){
+  const data=await fbGET('/extra_dhikr');const tb=G('dtb');
+  if(!data||typeof data!=='object'||!Object.keys(data).length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">📿</div><div class="et">Koi dhikr nahi hai.</div></div></td></tr>';return;}
+  var html3='';
+  Object.entries(data).forEach(function(e3){
+    var k=e3[0],d=e3[1];
+    html3+='<tr><td class="tar">'+(d.ar||'')+'</td>';
+    html3+='<td>'+(d.lo&&d.lo.hi||'')+'</td>';
+    html3+='<td>'+(d.lo&&d.lo.en||'')+'</td>';
+    html3+='<td><span class="bdg b-go">'+(d.tgt||100)+'x</span></td>';
+    html3+='<td><span class="bdg '+(d.active?'b-gr':'b-rd')+'">'+(d.active?'Active':'Off')+'</span></td>';
+    html3+='<td><button class="btn btn-dn btn-sm" data-k="'+k+'" onclick="delDBtn(this)">Del</button></td></tr>';
+  });
+  tb.innerHTML=html3;
+}
+
+function delD(k){showConf('Delete Dhikr?','App se hata diya jaayega.',async()=>{await fbDEL('/extra_dhikr/'+k);toast('Deleted');loadDList();loadDash();});}
+function clrD(){['di','da','dh','de','du','db','dmh','dme'].forEach(i=>G(i)&&(G(i).value=''));G('dc').value='📿';G('dt').value='100';}
+
+function prvH(){if(G('harp'))G('harp').textContent=G('har').value||'Arabic...';if(G('htxp'))G('htxp').textContent=G('htx').value||'Translation...';if(G('hrfp'))G('hrfp').textContent=G('hrf').value||'Reference';}
+
+async function saveHadith(){
+  const text=G('htx').value.trim();if(!text){toast('Translation zaroori hai','warn');return;}
+  const r=await fbPUT('/hadith',{text,ar_text:V('har'),ref:V('hrf'),lang:V('hlng')||'hi',active:G('hat').checked,timestamp:Date.now()});
+  if(r){toast('Hadith publish ho gayi!');loadDash();}
+}
+async function deactH(){showConf('Remove Hadith?','App se hata di jaayegi.',async()=>{await fbPATCH('/hadith',{active:false});toast('Hadith removed');});}
+async function togH(){if(FBURL&&FBKEY)await fbPATCH('/hadith',{active:G('hat').checked});toast(G('hat').checked?'Hadith active':'Hadith inactive');}
+
+function saveAds(){
+  const aa=V('aai'),ab=V('abi'),t=G('atm').checked;
+  localStorage.setItem('adapp',aa);localStorage.setItem('adban',ab);
+  genAd(aa,ab,t);toast('Ad settings saved!');
+  if(aa&&G('st3')){G('st3').textContent='Configured';G('st3').className='bdg b-gr';}
+}
+function genAd(app,ban,test){
+  if(!G('adcode'))return;
+  var id=test?'ca-app-pub-3940256099942544/6300978111':(ban||'YOUR_BANNER_ID');
+  var appId=app||'YOUR_APP_ID';
+  var code='';
+  code+='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+appId+'" crossorigin="anonymous"><\/script>\n';
+  code+='<ins class="adsbygoogle" style="display:block;width:320px;height:50px;"\n';
+  code+='     data-ad-client="'+appId+'"\n';
+  code+='     data-ad-slot="'+id+'"\n';
+  code+='     data-ad-format="banner"></ins>\n';
+  code+='<script>(adsbygoogle=window.adsbygoogle||[]).push({});<\/script>';
+  G('adcode').textContent=code;
+}
+function cpAd(){navigator.clipboard.writeText(G('adcode').textContent||'').then(()=>toast('Copied!'));}
+
+function saveFBCfg(){
+  const url=V('sfurl'),key=V('sfkey');
+  if(!url||!key){toast('URL aur Key dono zaroori hain','warn');return;}
+  localStorage.setItem('fburl',url);localStorage.setItem('fbkey',key);
+  FBURL=url;FBKEY=key;toast('Firebase config saved!');checkFB();
+}
+
+function saveCreds(){
+  const u=V('su'),p=V('sp'),pc=V('spc');
+  if(!u||!p){toast('Dono fields zaroori hain','warn');return;}
+  if(p!==pc){toast('Passwords match nahi kar rahe','err');return;}
+  localStorage.setItem('au',u);localStorage.setItem('ap',p);
+  G('sbun').textContent=u;toast('Password update ho gaya!');
+  ['su','sp','spc'].forEach(i=>G(i)&&(G(i).value=''));
+}
+
+function saveAppCfg(){
+  ['cps','cas','cnd','cro'].forEach(function(i){localStorage.setItem(i,V(i));});
+  var ps=V('cps')||'https://play.google.com/store/apps/details?id=YOUR.APP.ID';
+  var as=V('cas')||'https://apps.apple.com/app/YOUR-APP-ID';
+  var nd=V('cnd')||'3';
+  var ro=V('cro')||'5';
+  var code='const APP_CONFIG={\n';
+  code+="  playStoreUrl:'"+ps+"',\n";
+  code+="  appStoreUrl:'"+as+"',\n";
+  code+='  notifRemindDays:'+nd+',\n';
+  code+='  rateAfterDays:3,\n';
+  code+='  rateAfterOpens:'+ro+',\n';
+  code+='};';
+  if(G('gcfg'))G('gcfg').textContent=code;
+  toast('Config saved!');
+}
+function cpCfg(){navigator.clipboard.writeText(G('gcfg').textContent||'').then(()=>toast('Copied!'));}
+
+function G(id){return document.getElementById(id);}
+function V(id){return(G(id)?.value||'').trim();}
+
+let ccb=null;
+function showConf(t,b,cb){G('ct').textContent=t;G('cb').textContent=b;ccb=cb;G('conf').classList.add('open');}
+function clsC(){G('conf').classList.remove('open');ccb=null;}
+G('cok').addEventListener('click',()=>{if(ccb)ccb();clsC();});
+
+let tt;
+function toast(msg,type='ok'){
+  const el=G('toast');
+  el.style.borderColor=type==='err'?'var(--red)':type==='warn'?'var(--gold)':'var(--em)';
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>
