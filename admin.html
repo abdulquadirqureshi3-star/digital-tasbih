@@ -1,0 +1,2461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tasbih Admin — Firebase Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#07080d;--s1:#0d0f18;--card:#11141f;--card2:#181c2d;
+  --b1:rgba(201,168,76,.14);--b2:rgba(255,255,255,.055);
+  --gold:#c9a84c;--gold2:#f0d47a;--gold3:#7a5c18;--gold4:rgba(201,168,76,.08);
+  --em:#1fc87e;--em2:#0d8a52;--em3:rgba(31,200,126,.1);
+  --red:#e05555;--red2:rgba(224,85,85,.1);
+  --blue:#4a9eff;--blue2:rgba(74,158,255,.1);
+  --t1:#ede6d4;--t2:#8a91a8;--t3:#3e4557;
+  --glow:rgba(201,168,76,.25);--glow2:rgba(201,168,76,.08);--r:13px;
+}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:"DM Sans",sans-serif;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--gold3);border-radius:4px;}
+a{color:var(--blue);}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;transition:opacity .5s;}
+.sp-ring{width:72px;height:72px;border-radius:50%;border:2px solid var(--b1);border-top-color:var(--gold);animation:spin 1s linear infinite;display:flex;align-items:center;justify-content:center;font-size:28px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.sp-txt{font-family:"Cinzel",serif;font-size:12px;color:var(--gold);letter-spacing:3px;animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:.3;}50%{opacity:1;}}
+
+/* LOGIN */
+#loginWrap{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse 120% 80% at 50% -10%,rgba(201,168,76,.06),transparent 65%),var(--bg);}
+.lcard{width:min(400px,94vw);padding:40px 34px 34px;background:var(--card);border:1px solid var(--b1);border-radius:22px;
+  box-shadow:0 32px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);animation:up .45s cubic-bezier(.22,.68,0,1.2);}
+@keyframes up{from{opacity:0;transform:translateY(24px) scale(.97);}to{opacity:1;transform:none;}}
+.lico{font-size:42px;text-align:center;margin-bottom:10px;animation:flt 3s ease-in-out infinite;}
+@keyframes flt{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.ltit{font-family:"Cinzel",serif;font-size:19px;color:var(--gold);letter-spacing:2px;text-align:center;}
+.lsub{font-size:11px;color:var(--t3);text-align:center;margin-top:3px;margin-bottom:22px;}
+.ldiv{height:1px;background:linear-gradient(90deg,transparent,var(--b1),transparent);margin:18px 0;}
+.lf{margin-bottom:13px;}
+.lf label{display:block;font-size:10px;font-weight:700;color:var(--t2);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px;}
+.lf input{width:100%;padding:12px 14px;background:var(--s1);border:1px solid var(--b2);border-radius:10px;color:var(--t1);font-size:14px;font-family:"DM Sans",sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;}
+.lf input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow2);}
+.lbtn{width:100%;padding:14px;margin-top:6px;background:linear-gradient(135deg,var(--gold3),var(--gold));border:none;border-radius:11px;font-family:"Cinzel",serif;font-size:13px;font-weight:700;color:#09090d;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 20px var(--glow);transition:transform .15s,box-shadow .2s;}
+.lbtn:hover{transform:translateY(-2px);box-shadow:0 8px 28px var(--glow);}
+.lerr{font-size:12px;color:var(--red);text-align:center;margin-top:10px;display:none;}
+.lhint{font-size:11px;color:var(--t3);text-align:center;margin-top:14px;line-height:1.6;}
+.lhint b{color:var(--gold);}
+
+/* APP */
+#app{display:none;min-height:100vh;}
+
+/* SIDEBAR */
+.sb{position:fixed;top:0;left:0;bottom:0;width:234px;background:var(--card);border-right:1px solid var(--b2);display:flex;flex-direction:column;z-index:200;overflow:hidden;}
+.sb::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.sb-logo{padding:24px 20px 18px;border-bottom:1px solid var(--b2);}
+.sb-logo-ico{font-size:30px;margin-bottom:6px;}
+.sb-logo-nm{font-family:"Cinzel",serif;font-size:13px;color:var(--gold);letter-spacing:2px;}
+.sb-logo-vr{font-size:10px;color:var(--t3);margin-top:1px;}
+.sb-nav{flex:1;padding:10px 9px;overflow-y:auto;}
+.sb-sec{font-size:9px;font-weight:700;color:var(--t3);letter-spacing:2.5px;text-transform:uppercase;padding:13px 11px 4px;}
+.sb-it{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--t2);transition:all .16s;margin-bottom:1px;position:relative;}
+.sb-it:hover{background:var(--card2);color:var(--t1);}
+.sb-it.on{background:linear-gradient(135deg,rgba(201,168,76,.13),rgba(201,168,76,.04));color:var(--gold);border:1px solid var(--b1);}
+.sb-it.on::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:3px;background:var(--gold);border-radius:0 2px 2px 0;}
+.sb-ico{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.sb-ft{padding:13px 9px;border-top:1px solid var(--b2);}
+.sb-usr{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border-radius:10px;margin-bottom:8px;}
+.sb-av{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--gold3),var(--gold));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.sb-un{font-size:12px;font-weight:600;color:var(--t1);}
+.sb-ur{font-size:10px;color:var(--t3);}
+.sb-out{width:100%;padding:8px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--t3);font-size:12px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .16s;}
+.sb-out:hover{border-color:var(--red);color:var(--red);}
+
+/* MAIN */
+.main{margin-left:234px;min-height:100vh;overflow-y:auto;max-height:100vh;}
+.topbar{padding:14px 26px;display:flex;align-items:center;justify-content:space-between;background:rgba(7,8,13,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--b2);position:sticky;top:0;z-index:100;}
+.tb-tit{font-family:"Cinzel",serif;font-size:14px;color:var(--gold);letter-spacing:1px;}
+.tb-crb{font-size:11px;color:var(--t3);margin-top:2px;}
+.tb-r{display:flex;align-items:center;gap:14px;}
+.cdot{width:7px;height:7px;border-radius:50%;background:var(--em);box-shadow:0 0 8px var(--em2);animation:br 2.5s ease-in-out infinite;}
+.cdot.off{background:var(--t3);box-shadow:none;animation:none;}
+@keyframes br{0%,100%{opacity:1;}50%{opacity:.4;}}
+.ctxt{font-size:11px;color:var(--t2);}
+.tbtn{padding:7px 13px;border-radius:8px;border:1px solid var(--b2);background:transparent;color:var(--t2);font-size:12px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .16s;}
+.tbtn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* CONTENT */
+.content{padding:22px 24px;}
+.page{display:none;}
+.page.on{display:block;animation:pgin .22s ease;}
+@keyframes pgin{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}
+
+/* SCROLLABLE MAIN */
+.main{overflow-y:auto;max-height:100vh;}
+
+/* DHIKR MODAL OVERLAY */
+.dhikr-modal{display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.82);align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.dhikr-modal.open{display:flex;}
+.dm-box{background:var(--card);border:1px solid var(--b1);border-radius:18px;width:min(740px,96vw);position:relative;box-shadow:0 32px 80px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.04);margin:auto;}
+.dm-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--b2);position:sticky;top:0;background:var(--card);z-index:5;border-radius:18px 18px 0 0;}
+.dm-body{padding:20px 22px 22px;}
+.fg4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;}
+.fg3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.fg2c{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+
+/* ALERT BANNER */
+.alert{background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.04));border:1px solid var(--b1);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:none;}
+.alert.show{display:flex;gap:12px;align-items:flex-start;}
+.alert-ico{font-size:20px;flex-shrink:0;}
+.alert-tt{font-size:13px;font-weight:600;color:var(--gold);margin-bottom:3px;}
+.alert-ds{font-size:12px;color:var(--t2);line-height:1.6;}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.sc{background:var(--card);border:1px solid var(--b2);border-radius:var(--r);padding:18px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
+.sc:hover{transform:translateY(-2px);border-color:var(--b1);}
+.sc::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;}
+.sc.go::after{background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.sc.gr::after{background:linear-gradient(90deg,transparent,var(--em),transparent);}
+.sc.bl::after{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.sc.rd::after{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.sc-ico{font-size:24px;margin-bottom:11px;}
+.sc-val{font-family:"Cinzel",serif;font-size:28px;color:var(--gold2);font-weight:700;line-height:1;}
+.sc-lbl{font-size:12px;color:var(--t2);margin-top:4px;}
+.sc-sub{font-size:10px;color:var(--t3);margin-top:2px;}
+
+/* PANEL */
+.pnl{background:var(--card);border:1px solid var(--b2);border-radius:var(--r);padding:20px;margin-bottom:16px;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:15px;gap:10px;}
+.pt{font-family:"Cinzel",serif;font-size:13px;color:var(--gold);letter-spacing:.5px;}
+.ps{font-size:11px;color:var(--t3);margin-top:3px;}
+
+/* FORM */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.ff{display:flex;flex-direction:column;gap:5px;}
+.ff.full{grid-column:1/-1;}
+.flb{font-size:10px;font-weight:700;color:var(--t2);letter-spacing:1px;text-transform:uppercase;}
+.fin,.fta,.fse{padding:10px 13px;background:var(--s1);border:1px solid var(--b2);border-radius:9px;color:var(--t1);font-size:13px;font-family:"DM Sans",sans-serif;outline:none;transition:border-color .18s,box-shadow .18s;width:100%;}
+.fin:focus,.fta:focus,.fse:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow2);}
+.fta{resize:vertical;min-height:84px;}
+.fse option{background:var(--card);}
+.fhi{font-size:11px;color:var(--t3);}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:9px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .16s;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{transform:scale(.97);}
+.btn-g{background:linear-gradient(135deg,var(--gold3),var(--gold));color:#09090d;box-shadow:0 3px 14px var(--glow);}
+.btn-g:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--glow);}
+.btn-em{background:linear-gradient(135deg,var(--em2),var(--em));color:#fff;}
+.btn-em:hover{transform:translateY(-2px);}
+.btn-gh{background:transparent;color:var(--t2);border:1px solid var(--b2);}
+.btn-gh:hover{border-color:var(--gold);color:var(--gold);}
+.btn-dn{background:var(--red2);color:var(--red);border:1px solid rgba(224,85,85,.25);}
+.btn-dn:hover{background:rgba(224,85,85,.2);}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:7px;}
+
+/* TABLE */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:8px 13px;text-align:left;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--b2);white-space:nowrap;}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.024);transition:background .14s;}
+tbody tr:hover{background:rgba(255,255,255,.018);}
+tbody td{padding:10px 13px;font-size:13px;vertical-align:middle;}
+.tar{font-family:"Amiri",serif;font-size:18px;direction:rtl;color:var(--gold2);}
+
+/* BADGE */
+.bdg{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;}
+.b-gr{background:var(--em3);color:var(--em);border:1px solid rgba(31,200,126,.25);}
+.b-rd{background:var(--red2);color:var(--red);border:1px solid rgba(224,85,85,.25);}
+.b-go{background:var(--gold4);color:var(--gold);border:1px solid var(--b1);}
+.b-bl{background:var(--blue2);color:var(--blue);border:1px solid rgba(74,158,255,.25);}
+
+/* TOGGLE */
+.tog{display:flex;align-items:center;gap:9px;}
+.ts{position:relative;width:40px;height:22px;flex-shrink:0;}
+.ts input{display:none;}
+.tsl{position:absolute;inset:0;background:var(--card2);border-radius:11px;cursor:pointer;transition:.26s;border:1px solid var(--b2);}
+.tsl::before{content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;border-radius:50%;background:var(--t3);transition:.26s;}
+.ts input:checked+.tsl{background:linear-gradient(135deg,var(--em2),var(--em));border-color:var(--em);}
+.ts input:checked+.tsl::before{transform:translateX(18px);background:#fff;}
+
+/* CHART */
+.chart{display:flex;align-items:flex-end;gap:5px;height:120px;padding:4px 0 0;}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height .5s cubic-bezier(.34,1.56,.64,1);}
+.bar.go{background:linear-gradient(180deg,var(--gold2),var(--gold3));}
+.bar.em{background:linear-gradient(180deg,var(--em),var(--em2));}
+.bday{font-size:9px;color:var(--t3);}
+.bnum{font-size:9px;color:var(--t2);}
+
+/* NOTIF PREVIEW */
+.npw{background:var(--s1);border:1px solid var(--b2);border-radius:10px;padding:12px;margin-top:12px;}
+.nplb{font-size:9px;font-weight:700;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.npc{background:var(--card2);border-radius:9px;padding:11px;display:flex;align-items:flex-start;gap:11px;}
+
+/* SETUP STEPS */
+.step{display:flex;gap:14px;padding:15px 0;border-bottom:1px solid var(--b2);}
+.step:last-child{border:none;padding-bottom:0;}
+.stn{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold3),var(--gold));display:flex;align-items:center;justify-content:center;font-family:"Cinzel",serif;font-size:11px;color:#09090d;font-weight:700;flex-shrink:0;margin-top:2px;}
+.st-tt{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px;}
+.st-ds{font-size:12px;color:var(--t2);line-height:1.7;}
+.code{background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:10px 13px;font-size:11px;color:var(--em);font-family:"Courier New",monospace;margin-top:8px;overflow-x:auto;white-space:pre;line-height:1.6;}
+.tipbx{background:var(--gold4);border:1px solid var(--b1);border-radius:10px;padding:13px 15px;margin-top:12px;}
+.tipbx p{font-size:12px;color:var(--t2);line-height:1.7;}
+.tipbx b{color:var(--gold);}
+
+/* 2 COL */
+.twoc{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* EMPTY */
+.empty{text-align:center;padding:38px 20px;color:var(--t3);}
+.ei{font-size:30px;opacity:.3;margin-bottom:8px;}
+.et{font-size:12px;line-height:1.7;}
+
+/* CONFIRM */
+#conf{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;}
+#conf.open{display:flex;}
+.cbox{background:var(--card);border:1px solid var(--b1);border-radius:16px;padding:24px;width:310px;animation:up .22s ease;}
+.ct{font-size:14px;font-weight:600;margin-bottom:7px;}
+.cb{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:18px;}
+.cr{display:flex;gap:9px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;z-index:9999;background:var(--card2);border:1px solid var(--b1);border-radius:11px;padding:11px 16px;font-size:13px;transform:translateY(14px);opacity:0;transition:all .28s;pointer-events:none;max-width:300px;}
+#toast.show{transform:none;opacity:1;}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="sp-ring"><span style="animation:none">📿</span></div>
+  <div class="sp-txt">TASBIH ADMIN</div>
+</div>
+
+<div id="loginWrap">
+  <div class="lcard">
+    <div class="lico">📿</div>
+    <div class="ltit">TASBIH ADMIN</div>
+    <div class="lsub">Firebase Control Panel</div>
+    <div class="ldiv"></div>
+    <div class="lf"><label>Username</label><input id="lu" type="text" placeholder="admin" autocomplete="off" onkeydown="if(event.key==='Enter')login()"></div>
+    <div class="lf"><label>Password</label><input id="lp" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"></div>
+    <button class="lbtn" onclick="login()">Sign In &rarr;</button>
+    <div class="lerr" id="lerr">Wrong username or password</div>
+    <div class="lhint">Default: <b>admin</b> / <b>tasbih786</b><br>Login ke baad Settings mein change karein</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="sb">
+    <div class="sb-logo">
+      <div class="sb-logo-ico">📿</div>
+      <div class="sb-logo-nm">TASBIH</div>
+      <div class="sb-logo-vr">Firebase Admin v1.0</div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">Overview</div>
+      <div class="sb-it on" onclick="go('dash',this)"><span class="sb-ico">📊</span>Dashboard</div>
+      <div class="sb-sec">Content</div>
+      <div class="sb-it" onclick="go('notif',this)"><span class="sb-ico">🔔</span>Notifications</div>
+      <div class="sb-it" onclick="go('announce',this)"><span class="sb-ico">📢</span>Announcements</div>
+      <div class="sb-it" onclick="go('dhikr',this)"><span class="sb-ico">📿</span>Extra Dhikr</div>
+      <div class="sb-it" onclick="go('duas',this)"><span class="sb-ico">🤲</span>Custom Duas</div>
+      <div class="sb-it" onclick="go('appdhikr',this)"><span class="sb-ico">✏️</span>App Dhikr Edit</div>
+      <div class="sb-it" onclick="go('asma',this)"><span class="sb-ico">✨</span>99 Names Edit</div>
+      <div class="sb-it" onclick="go('daily',this)"><span class="sb-ico">🌟</span>Daily Dhikr</div>
+      <div class="sb-it" onclick="go('hadith',this)"><span class="sb-ico">📚</span>Hadith of Day</div>
+      <div class="sb-it" onclick="go('migrate',this)"><span class="sb-ico">M</span>Migration</div>
+      <div class="sb-sec">System</div>
+      <div class="sb-it" onclick="go('appsett',this)"><span class="sb-ico">📱</span>App Settings</div>
+      <div class="sb-it" onclick="go('ads',this)"><span class="sb-ico">💰</span>Ad Settings</div>
+      <div class="sb-it" onclick="go('setup',this)"><span class="sb-ico">🚀</span>Setup Guide</div>
+      <div class="sb-it" onclick="go('sett',this)"><span class="sb-ico">⚙️</span>Settings</div>
+    </div>
+    <div class="sb-ft">
+      <div class="sb-usr">
+        <div class="sb-av">👑</div>
+        <div><div class="sb-un" id="sbun">Admin</div><div class="sb-ur">Super Admin</div></div>
+      </div>
+      <button class="sb-out" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div><div class="tb-tit" id="ptit">Dashboard</div><div class="tb-crb" id="pcrb">Digital Tasbih Admin</div></div>
+      <div class="tb-r">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div class="cdot off" id="cdot"></div>
+          <div class="ctxt" id="ctxt">Not connected</div>
+        </div>
+        <div id="authStatus" style="font-size:11px;color:var(--t3);">🔒 Auth: Checking...</div>
+        <button class="tbtn" onclick="autoFbSignIn()">🔑 Re-Auth</button>
+        <button class="tbtn" onclick="checkFB()">↻ Test</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page on" id="pg-dash">
+        <div class="alert" id="setupAlert">
+          <div class="alert-ico">⚠️</div>
+          <div>
+            <div class="alert-tt">Firebase Configure Nahi Hai</div>
+            <div class="alert-ds">Settings mein Firebase Database URL aur API Key paste karo. <span style="color:var(--gold);cursor:pointer;" onclick="go('setup',document.querySelector('[onclick*=setup]'))">Setup Guide dekho</span></div>
+          </div>
+        </div>
+        <div class="sg">
+          <div class="sc go"><div class="sc-ico">🔔</div><div class="sc-val" id="s1">—</div><div class="sc-lbl">Notifications</div><div class="sc-sub">Total saved</div></div>
+          <div class="sc gr"><div class="sc-ico">📿</div><div class="sc-val" id="s2">—</div><div class="sc-lbl">Extra Dhikr</div><div class="sc-sub">Admin added</div></div>
+          <div class="sc bl"><div class="sc-ico">📚</div><div class="sc-val" id="s3">—</div><div class="sc-lbl">Hadith</div><div class="sc-sub">Active in app</div></div>
+          <div class="sc rd"><div class="sc-ico">🔥</div><div class="sc-val" id="s4">—</div><div class="sc-lbl">Firebase</div><div class="sc-sub" id="s4s">Status</div></div>
+        </div>
+        <div class="twoc">
+          <div class="pnl">
+            <div class="ph"><div><div class="pt">Quick Actions</div></div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button class="btn btn-g" style="justify-content:flex-start;" onclick="go('notif',document.querySelector('[onclick*=notif]'))">🔔 Notification Bhejein</button>
+              <button class="btn btn-em" style="justify-content:flex-start;" onclick="go('dhikr',document.querySelector('[onclick*=dhikr]'))">📿 Naya Dhikr Add Karein</button>
+              <button class="btn btn-gh" style="justify-content:flex-start;" onclick="go('hadith',document.querySelector('[onclick*=hadith]'))">📚 Hadith Update Karein</button>
+              <button class="btn btn-gh" style="justify-content:flex-start;" onclick="go('setup',document.querySelector('[onclick*=setup]'))">🚀 Setup Guide</button>
+            </div>
+          </div>
+          <div class="pnl">
+            <div class="ph"><div><div class="pt">System Status</div></div><button class="btn btn-gh btn-sm" onclick="checkFB();loadDash();">Refresh</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+              <div style="background:var(--s1);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:18px;margin-bottom:5px;">🔥</div><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">Firebase</div><div class="bdg b-go" id="st1">Not Set</div></div>
+              <div style="background:var(--s1);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:18px;margin-bottom:5px;">📢</div><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">Notif</div><div class="bdg b-gr">Ready</div></div>
+              <div style="background:var(--s1);border-radius:9px;padding:12px;text-align:center;"><div style="font-size:18px;margin-bottom:5px;">💰</div><div style="font-size:11px;color:var(--t2);margin-bottom:5px;">AdMob</div><div class="bdg b-go" id="st3">Not Set</div></div>
+            </div>
+            <div style="margin-top:14px;">
+              <div class="ph" style="margin-bottom:10px;"><div><div class="pt" style="font-size:11px;">Recent Activity</div></div></div>
+              <div class="chart" id="chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS -->
+      <div class="page" id="pg-notif">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📢 Notification Bhejein</div><div class="ps">Sabhi users ko automatically milegi</div></div></div>
+          <div class="fg">
+            <div class="ff"><div class="flb">Title *</div><input class="fin" id="nt" placeholder="Juma Mubarak!" oninput="prvN()"></div>
+            <div class="ff"><div class="flb">Emoji</div><input class="fin" id="ni" value="📿" oninput="prvN()"></div>
+            <div class="ff full"><div class="flb">Message *</div><textarea class="fta" id="nb" placeholder="Notification ka paigam likhein..." oninput="prvN()"></textarea></div>
+            <div class="ff"><div class="flb">Language</div>
+              <select class="fse" id="nl"><option value="all">Sabhi</option><option value="hi">Hindi</option><option value="en">English</option><option value="ur">Urdu</option><option value="ar">Arabic</option><option value="bn">Bengali</option></select></div>
+            <div class="ff"><div class="flb">Status</div><div class="fin" style="display:flex;align-items:center;"><div class="tog"><label class="ts"><input type="checkbox" id="na" checked><span class="tsl"></span></label><span style="font-size:12px;">Active</span></div></div></div>
+          </div>
+          <div class="npw"><div class="nplb">LIVE PREVIEW</div>
+            <div class="npc">
+              <div style="font-size:22px;flex-shrink:0;" id="pni">📿</div>
+              <div><div style="font-size:13px;font-weight:600;color:var(--t1);" id="pnt">Title</div>
+              <div style="font-size:12px;color:var(--t2);margin-top:3px;" id="pnb">Message...</div>
+              <div style="font-size:10px;color:var(--t3);margin-top:4px;">Digital Tasbih • Abhi</div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;">
+            <button class="btn btn-g" onclick="sendNotif()">🔔 Save &amp; Send</button>
+            <button class="btn btn-gh" onclick="clrN()">Clear</button>
+          </div>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📋 History</div></div><button class="btn btn-gh btn-sm" onclick="loadNotifs()">Refresh</button></div>
+          <div class="tw"><table><thead><tr><th>Title</th><th>Message</th><th>Lang</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="ntb"><tr><td colspan="5"><div class="empty"><div class="ei">🔔</div><div class="et">Koi notification nahi hai.</div></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- DHIKR -->
+      <div class="page" id="pg-dhikr">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📿 Naya Dhikr Add Karein</div><div class="ps">App mein automatic — update ki zaroorat nahi</div></div></div>
+          <div class="fg">
+            <div class="ff"><div class="flb">ID *</div><input class="fin" id="di" placeholder="tauba"><div class="fhi">Lowercase, no spaces</div></div>
+            <div class="ff"><div class="flb">Emoji</div><input class="fin" id="dc" placeholder="🤲"></div>
+            <div class="ff full"><div class="flb">Arabic *</div><input class="fin" id="da" placeholder="تُبْتُ إِلَى اللّٰہ" style="direction:rtl;font-family:Amiri,serif;font-size:20px;"></div>
+            <div class="ff"><div class="flb">Hindi</div><input class="fin" id="dh" placeholder="तौबा"></div>
+            <div class="ff"><div class="flb">English</div><input class="fin" id="de" placeholder="Tawbah"></div>
+            <div class="ff"><div class="flb">Urdu</div><input class="fin" id="du" placeholder="توبہ" style="direction:rtl;"></div>
+            <div class="ff"><div class="flb">Bengali</div><input class="fin" id="db" placeholder="তওবা"></div>
+            <div class="ff"><div class="flb">Hindi Meaning</div><input class="fin" id="dmh" placeholder="मैं तौबा करता हूँ"></div>
+            <div class="ff"><div class="flb">English Meaning</div><input class="fin" id="dme" placeholder="I repent to Allah"></div>
+            <div class="ff"><div class="flb">Default Target</div><input class="fin" id="dt" type="number" value="100"></div>
+            <div class="ff"><div class="flb">Status</div><div class="fin" style="display:flex;align-items:center;"><div class="tog"><label class="ts"><input type="checkbox" id="dact" checked><span class="tsl"></span></label><span style="font-size:12px;">Active</span></div></div></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;">
+            <button class="btn btn-em" onclick="saveDhikr()">Save Dhikr</button>
+            <button class="btn btn-gh" onclick="clrD()">Clear</button>
+          </div>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📋 Extra Dhikr List</div></div><button class="btn btn-gh btn-sm" onclick="loadDList()">Refresh</button></div>
+          <div class="tw"><table><thead><tr><th>Arabic</th><th>Hindi</th><th>English</th><th>Target</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="dtb"><tr><td colspan="6"><div class="empty"><div class="ei">📿</div><div class="et">Koi extra dhikr nahi hai.</div></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- HADITH -->
+      <div class="page" id="pg-hadith">
+        <div class="pnl">
+          <div class="ph">
+            <div><div class="pt">📚 Hadith of the Day</div><div class="ps">App mein hadith card dikhayein</div></div>
+            <div class="tog"><label class="ts"><input type="checkbox" id="hat" onchange="togH()"><span class="tsl"></span></label><span style="font-size:12px;color:var(--t2);">Show in App</span></div>
+          </div>
+          <div class="fg">
+            <div class="ff full"><div class="flb">Arabic Text</div><textarea class="fta" id="har" placeholder="Arabic hadith..." style="direction:rtl;font-family:Amiri,serif;font-size:16px;min-height:65px;" oninput="prvH()"></textarea></div>
+            <div class="ff full"><div class="flb">Translation *</div><textarea class="fta" id="htx" placeholder="Hadith ka tarjuma likhein..." oninput="prvH()"></textarea></div>
+            <div class="ff"><div class="flb">Reference</div><input class="fin" id="hrf" placeholder="Sahih Bukhari 6405" oninput="prvH()"></div>
+            <div class="ff"><div class="flb">Language</div><select class="fse" id="hlng"><option value="hi">Hindi</option><option value="en">English</option><option value="ur">Urdu</option></select></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;">
+            <button class="btn btn-g" onclick="saveHadith()">📚 Save &amp; Publish</button>
+            <button class="btn btn-dn" onclick="deactH()">Remove from App</button>
+          </div>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">Preview</div></div></div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:13px;padding:16px;max-width:380px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1.5px;text-align:center;margin-bottom:10px;">📚 HADITH OF THE DAY</div>
+            <div style="font-family:Amiri,serif;font-size:16px;color:var(--t1);line-height:1.7;margin-bottom:9px;direction:rtl;text-align:right;" id="harp">Arabic...</div>
+            <div style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:8px;" id="htxp">Translation...</div>
+            <div style="font-size:11px;color:var(--em);background:var(--em3);padding:5px 11px;border-radius:7px;display:inline-block;" id="hrfp">Reference</div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ANNOUNCEMENTS -->
+      <div class="page" id="pg-announce">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📢 Announcements / Banner</div><div class="ps">App mein top banner message dikhao — sale, update, feature launch etc.</div></div></div>
+          <div class="fg">
+            <div class="ff full"><div class="flb">Banner Title *</div><input class="fin" id="anTitle" placeholder="🎉 Naya Feature Aaya!" oninput="prvAnn()"></div>
+            <div class="ff full"><div class="flb">Banner Message *</div><textarea class="fta" id="anMsg" placeholder="Daily Dhikr feature ab available hai — try karein!" oninput="prvAnn()"></textarea></div>
+            <div class="ff"><div class="flb">Icon / Emoji</div><input class="fin" id="anIcon" value="📢" placeholder="📢" oninput="prvAnn()"></div>
+            <div class="ff"><div class="flb">CTA Button Text</div><input class="fin" id="anBtn" placeholder="Dekho →" oninput="prvAnn()"></div>
+            <div class="ff"><div class="flb">CTA Link (optional)</div><input class="fin" id="anLink" placeholder="https://..."></div>
+            <div class="ff"><div class="flb">Type</div>
+              <select class="fse" id="anType">
+                <option value="info">ℹ️ Info (Blue)</option>
+                <option value="gold">⭐ Feature (Gold)</option>
+                <option value="success">✅ Success (Green)</option>
+                <option value="warn">⚠️ Warning (Orange)</option>
+              </select>
+            </div>
+            <div class="ff"><div class="flb">Status</div>
+              <div class="fin" style="display:flex;align-items:center;">
+                <div class="tog"><label class="ts"><input type="checkbox" id="anActive" checked><span class="tsl"></span></label><span style="font-size:12px;">Active in App</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- Preview -->
+          <div style="margin-top:14px;background:var(--s1);border-radius:10px;padding:12px;">
+            <div style="font-size:9px;font-weight:700;color:var(--t3);letter-spacing:1.5px;margin-bottom:8px;">PREVIEW</div>
+            <div id="annPreview" style="background:linear-gradient(135deg,rgba(74,158,255,.12),rgba(74,158,255,.04));border:1px solid rgba(74,158,255,.3);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;">
+              <span style="font-size:22px;" id="annPIco">📢</span>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;color:var(--t1);" id="annPTitle">Banner Title</div>
+                <div style="font-size:12px;color:var(--t2);margin-top:2px;" id="annPMsg">Message...</div>
+              </div>
+              <div style="font-size:11px;font-weight:700;color:var(--blue);white-space:nowrap;" id="annPBtn">Dekho →</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+            <button class="btn btn-g" onclick="saveAnnouncement()">📢 Save &amp; Publish</button>
+            <button class="btn btn-dn" onclick="deactivateAnnouncement()">Remove from App</button>
+          </div>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">📋 Active Announcements</div></div><button class="btn btn-gh btn-sm" onclick="loadAnnouncements()">Refresh</button></div>
+          <div class="tw"><table><thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="annTb"><tr><td colspan="4"><div class="empty"><div class="ei">📢</div><div class="et">Koi announcement nahi.</div></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- CUSTOM DUAS -->
+      <div class="page" id="pg-duas">
+        <div class="pnl">
+          <div class="ph">
+            <div><div class="pt">🤲 Custom Duas</div><div class="ps">Masnoon duas add karo — app ke Duas section mein dikhengi</div></div>
+            <button class="btn btn-em btn-sm" onclick="showDuaForm()">+ Nai Dua</button>
+          </div>
+          <div id="duaList"><div class="empty"><div class="ei">🤲</div><div class="et">Koi dua nahi. "Nai Dua" se add karo.</div></div></div>
+        </div>
+        <div class="pnl" id="duaForm" style="display:none;">
+          <div class="ph">
+            <div><div class="pt" id="duaFormTitle">Nai Dua Add Karo</div></div>
+            <button class="btn btn-gh btn-sm" onclick="hideDuaForm()">✕</button>
+          </div>
+          <input type="hidden" id="editDuaId">
+          <div class="fg">
+            <div class="ff"><div class="flb">ID *</div><input class="fin" id="duaId" placeholder="dua_masoomiat"><div class="fhi">Unique, lowercase</div></div>
+            <div class="ff"><div class="flb">Category</div>
+              <select class="fse" id="duaCat">
+                <option value="morning">🌅 Subah (Morning)</option>
+                <option value="evening">🌇 Sham (Evening)</option>
+                <option value="salah">🕌 Namaz ke baad</option>
+                <option value="protection">🛡️ Hifazat</option>
+                <option value="forgiveness">💚 Maghfirat</option>
+                <option value="general">📿 Aam</option>
+              </select>
+            </div>
+            <div class="ff full"><div class="flb">Arabic *</div><textarea class="fta" id="duaAr" style="direction:rtl;font-family:Amiri,serif;font-size:17px;min-height:80px;" placeholder="اللَّهُمَّ أَنْتَ رَبِّي..."></textarea></div>
+            <div class="ff full"><div class="flb">Hindi Translation *</div><textarea class="fta" id="duaHi" placeholder="ऐ अल्लाह! तू मेरा रब है..."></textarea></div>
+            <div class="ff full"><div class="flb">English Translation</div><textarea class="fta" id="duaEn" placeholder="O Allah, You are my Lord..."></textarea></div>
+            <div class="ff full"><div class="flb">Urdu Translation</div><textarea class="fta" id="duaUr" style="direction:rtl;" placeholder="اے اللہ! تو میرا رب ہے..."></textarea></div>
+            <div class="ff full"><div class="flb">Reference</div><input class="fin" id="duaRef" placeholder="Sahih Bukhari 6306"></div>
+            <div class="ff"><div class="flb">Status</div>
+              <div class="fin" style="display:flex;align-items:center;">
+                <div class="tog"><label class="ts"><input type="checkbox" id="duaActive" checked><span class="tsl"></span></label><span style="font-size:12px;">Active</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:14px;">
+            <button class="btn btn-em" onclick="saveDua()">💾 Save Dua</button>
+            <button class="btn btn-gh" onclick="hideDuaForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- APP SETTINGS -->
+      <div class="page" id="pg-appsett">
+        <div class="twoc">
+          <div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">📱 App Info</div><div class="ps">Play Store / App Store links + basic config</div></div></div>
+              <div class="fg">
+                <div class="ff full"><div class="flb">App Name</div><input class="fin" id="asAppName" value="Digital Tasbih" placeholder="Digital Tasbih"></div>
+                <div class="ff full"><div class="flb">App Tagline</div><input class="fin" id="asTagline" placeholder="Your Digital Islamic Companion"></div>
+                <div class="ff full"><div class="flb">Play Store URL</div><input class="fin" id="asPs" placeholder="https://play.google.com/store/apps/details?id=..."></div>
+                <div class="ff full"><div class="flb">App Store URL (iOS)</div><input class="fin" id="asAs" placeholder="https://apps.apple.com/app/..."></div>
+                <div class="ff"><div class="flb">Support Email</div><input class="fin" id="asEmail" placeholder="support@example.com"></div>
+                <div class="ff"><div class="flb">Privacy Policy URL</div><input class="fin" id="asPrivacy" placeholder="https://..."></div>
+                <div class="ff"><div class="flb">Rate After (Days)</div><input class="fin" id="asRateDays" type="number" value="3"></div>
+                <div class="ff"><div class="flb">Rate After (Opens)</div><input class="fin" id="asRateOpens" type="number" value="5"></div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;">
+                <button class="btn btn-g" onclick="saveAppSettings()">💾 Save Settings</button>
+                <button class="btn btn-gh" onclick="genAppConfig()">📋 Copy Config Code</button>
+              </div>
+              <div class="code" id="appCfgCode" style="margin-top:10px;display:none;">// Save karo to generate</div>
+            </div>
+          </div>
+          <div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">🔥 Firebase Config (Hardcoded)</div><div class="ps">Ye values dono files mein same honi chahiye</div></div></div>
+              <div style="background:var(--em3);border:1px solid rgba(31,200,126,.25);border-radius:10px;padding:14px;margin-bottom:12px;">
+                <div style="font-size:11px;font-weight:700;color:var(--em);margin-bottom:8px;">✅ Current Firebase Config</div>
+                <div class="code" style="margin:0;font-size:10px;">apiKey: "AIzaSyB3ksliKr_-RBXlwqU12WP1-8cMwIWXmho"
+databaseURL: "https://digital-tasbih-19bca-default-rtdb.asia-southeast1.firebasedatabase.app"
+projectId: "digital-tasbih-19bca"
+appId: "1:158629477083:web:588bdbba6300b678aeeafe"</div>
+              </div>
+              <div style="font-size:12px;color:var(--t2);line-height:1.8;">
+                ✦ Admin panel ka <b>FBURL</b> Settings se load hota hai<br>
+                ✦ Main app ka config hardcoded hai HTML mein<br>
+                ✦ Dono same Firebase project use karte hain<br>
+                ✦ Change karna ho toh Settings → Firebase Config update karo
+              </div>
+            </div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">📊 App Statistics</div></div><button class="btn btn-gh btn-sm" onclick="loadAppStats()">Refresh</button></div>
+              <div id="appStatsBox" style="display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--s1);border-radius:9px;">
+                  <span style="font-size:13px;color:var(--t2);">📿 Extra Dhikr</span>
+                  <span style="font-family:Cinzel,serif;font-size:15px;color:var(--gold);" id="statDhikr">—</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--s1);border-radius:9px;">
+                  <span style="font-size:13px;color:var(--t2);">🔔 Notifications</span>
+                  <span style="font-family:Cinzel,serif;font-size:15px;color:var(--gold);" id="statNotif">—</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--s1);border-radius:9px;">
+                  <span style="font-size:13px;color:var(--t2);">🌟 Daily Sections</span>
+                  <span style="font-family:Cinzel,serif;font-size:15px;color:var(--gold);" id="statDaily">—</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--s1);border-radius:9px;">
+                  <span style="font-size:13px;color:var(--t2);">🤲 Custom Duas</span>
+                  <span style="font-family:Cinzel,serif;font-size:15px;color:var(--gold);" id="statDuas">—</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--s1);border-radius:9px;">
+                  <span style="font-size:13px;color:var(--t2);">📢 Announcements</span>
+                  <span style="font-family:Cinzel,serif;font-size:15px;color:var(--gold);" id="statAnn">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADS -->
+      <div class="page" id="pg-ads">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">💰 AdMob Configuration</div><div class="ps">Ad IDs set karein</div></div></div>
+          <div class="fg">
+            <div class="ff full"><div class="flb">AdMob App ID (Android)</div><input class="fin" id="aai" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"><div class="fhi">admob.google.com → Apps → App ID</div></div>
+            <div class="ff full"><div class="flb">Banner Ad Unit ID</div><input class="fin" id="abi" placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"></div>
+            <div class="ff"><div class="flb">Test Mode</div><div class="fin" style="display:flex;align-items:center;"><div class="tog"><label class="ts"><input type="checkbox" id="atm" checked><span class="tsl"></span></label><span style="font-size:12px;">Development mein ON rakhein</span></div></div></div>
+          </div>
+          <button class="btn btn-g" style="margin-top:13px;" onclick="saveAds()">Save Ad Settings</button>
+        </div>
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">Generated Code</div><div class="ps">digital-tasbih.html mein paste karein</div></div><button class="btn btn-gh btn-sm" onclick="cpAd()">Copy</button></div>
+          <div class="code" id="adcode">Upar Ad IDs save karo to generate</div>
+        </div>
+      </div>
+
+      <!-- SETUP GUIDE -->
+      <div class="page" id="pg-setup">
+        <div class="pnl">
+          <div class="ph"><div><div class="pt">🚀 Firebase + Play Store Setup</div><div class="ps">Step by step — mostly free</div></div></div>
+
+          <div class="step"><div class="stn">1</div><div>
+            <div class="st-tt">Firebase Project Banao</div>
+            <div class="st-ds"><a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → "Add project" → naam: <b>digital-tasbih</b> → Google Analytics ON karo → Create Project</div>
+          </div></div>
+
+          <div class="step"><div class="stn">2</div><div>
+            <div class="st-tt">Realtime Database Enable Karo</div>
+            <div class="st-ds">Firebase Console → Build → Realtime Database → Create Database → Location: <b>asia-southeast1 (Singapore)</b> → <b>Start in test mode</b> → Enable</div>
+            <div class="code">URL milega:
+https://digital-tasbih-default-rtdb.asia-southeast1.firebasedatabase.app</div>
+          </div></div>
+
+          <div class="step"><div class="stn">3</div><div>
+            <div class="st-tt">Web App Add Karo — Config Copy Karo</div>
+            <div class="st-ds">Project Overview → "Add app" → Web icon → nickname: tasbih-web → Register → <b>firebaseConfig copy karo</b> → Project Settings mein jaake <b>Web API Key</b> bhi note karo</div>
+            <div class="code">firebaseConfig = {
+  apiKey: "AIzaSy...",          ← Web API Key
+  databaseURL: "https://...",   ← sabse zaroori
+  projectId: "digital-tasbih",
+  ...
+}</div>
+          </div></div>
+
+          <div class="step"><div class="stn">4</div><div>
+            <div class="st-tt">digital-tasbih.html Mein Config Daalo</div>
+            <div class="st-ds">HTML file mein ye section dhundo:</div>
+            <div class="code">const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyB3ksliKr_-RBXlwqU12WP1-8cMwIWXmho",
+  authDomain:        "digital-tasbih-19bca.firebaseapp.com",
+  databaseURL:       "https://digital-tasbih-19bca-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "digital-tasbih-19bca",
+  storageBucket:     "digital-tasbih-19bca.firebasestorage.app",
+  messagingSenderId: "158629477083",
+  appId:             "1:158629477083:web:588bdbba6300b678aeeafe",
+
+};</div>
+          </div></div>
+
+          <div class="step"><div class="stn">5</div><div>
+            <div class="st-tt">Admin Panel Mein Firebase Config Daalo</div>
+            <div class="st-ds">Is admin panel → <b>Settings tab</b> → Firebase Database URL aur Web API Key paste karo → Save → "Test Firebase" se verify karo</div>
+          </div></div>
+
+          <div class="step"><div class="stn">6</div><div>
+            <div class="st-tt">Database Security Rules Set Karo</div>
+            <div class="st-ds">Firebase Console → Realtime Database → Rules:</div>
+            <div class="code">{
+  "rules": {
+    ".read": true,
+    ".write": false
+  }
+}</div>
+            <div class="st-ds" style="margin-top:6px;">Public read (app ke liye), write sirf Console se hoga.</div>
+          </div></div>
+
+          <div class="step"><div class="stn">7</div><div>
+            <div class="st-tt">GitHub Pages Pe Host Karo (Free)</div>
+            <div class="st-ds"><a href="https://github.com" target="_blank">github.com</a> → New repo: <b>digital-tasbih</b> → Public → <b>index.html</b> naam se upload → Settings → Pages → main branch → Save<br>URL: <code style="color:var(--em);">USERNAME.github.io/digital-tasbih</code></div>
+          </div></div>
+
+          <div class="step"><div class="stn">8</div><div>
+            <div class="st-tt">manifest.json Upload Karo</div>
+            <div class="code">{
+  "name": "Digital Tasbih",
+  "short_name": "Tasbih",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#c9a84c",
+  "background_color": "#0a0c10",
+  "icons": [
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png"}
+  ]
+}</div>
+          </div></div>
+
+          <div class="step"><div class="stn">9</div><div>
+            <div class="st-tt">Android App Banao — PWABuilder (Free)</div>
+            <div class="st-ds"><a href="https://pwabuilder.com" target="_blank">pwabuilder.com</a> → GitHub URL daalo → Package for Android → Download AAB</div>
+          </div></div>
+
+          <div class="step"><div class="stn">10</div><div>
+            <div class="st-tt">Play Store Publish ($25 ek baar)</div>
+            <div class="st-ds"><a href="https://play.google.com/console" target="_blank">play.google.com/console</a> → $25 account → Create App → AAB upload → Submit → 3-7 din</div>
+          </div></div>
+
+          <div class="tipbx"><p>
+            <b>Admin Panel URL:</b> tasbih-admin.html bhi GitHub mein upload karo.<br>
+            URL: <code>USERNAME.github.io/digital-tasbih/admin.html</code><br><br>
+            <b>Firebase Free Limits:</b> 1GB Storage + 10GB/month bandwidth = lakhon users ke liye kaafi!<br>
+            <b>Total Cost:</b> Firebase Free + GitHub Free + PWABuilder Free + Play Store $25 = <b>Sirf $25!</b>
+          </p></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="pg-sett">
+        <div class="twoc">
+          <div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">🔥 Firebase Config</div><div class="ps">Database URL + Secure Auth</div></div></div>
+              <div class="ff" style="margin-bottom:11px;">
+                <div class="flb">Firebase Database URL</div>
+                <input class="fin" id="sfurl" placeholder="https://digital-tasbih-19bca-default-rtdb.asia-southeast1.firebasedatabase.app">
+                <div class="fhi">Realtime Database page mein milta hai</div>
+              </div>
+              <div class="ff" style="margin-bottom:11px;">
+                <div class="flb">Web API Key</div>
+                <input class="fin" id="sfkey" placeholder="AIzaSy...">
+                <div class="fhi">Project Settings → General → Web API Key</div>
+              </div>
+              <div style="background:rgba(31,200,126,0.06);border:1px solid rgba(31,200,126,0.2);border-radius:10px;padding:14px;margin-bottom:13px;">
+                <div style="font-size:11px;font-weight:700;color:var(--em);margin-bottom:10px;letter-spacing:1px;">🔒 SECURE WRITE — Firebase Auth</div>
+                <div class="ff" style="margin-bottom:10px;">
+                  <div class="flb">Firebase Auth Email</div>
+                  <input class="fin" id="sfbemail" placeholder="admin@example.com">
+                  <div class="fhi">Firebase Console → Authentication → Users → Add user</div>
+                </div>
+                <div class="ff">
+                  <div class="flb">Firebase Auth Password</div>
+                  <input class="fin" type="password" id="sfbpass" placeholder="Strong password">
+                  <div class="fhi">Sirf write operations ke liye — secure token milega</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-g" onclick="saveFBCfg()">💾 Save Config</button>
+                <button class="btn btn-gh" onclick="checkFB()">🔗 Test Connection</button>
+              </div>
+            </div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">🔐 Admin Password</div></div></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">New Username</div><input class="fin" id="su" placeholder="New username"></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">New Password</div><input class="fin" type="password" id="sp" placeholder="New password"></div>
+              <div class="ff" style="margin-bottom:13px;"><div class="flb">Confirm Password</div><input class="fin" type="password" id="spc" placeholder="Repeat password"></div>
+              <button class="btn btn-g" onclick="saveCreds()">Update Password</button>
+            </div>
+          </div>
+          <div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">📱 App Config</div><div class="ps">Store links — publish hone ke baad</div></div></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">Play Store URL</div><input class="fin" id="cps" placeholder="https://play.google.com/store/apps/details?id=..."></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">App Store URL (iOS)</div><input class="fin" id="cas" placeholder="https://apps.apple.com/app/..."></div>
+              <div class="ff" style="margin-bottom:11px;"><div class="flb">Notif Re-ask (Days)</div><input class="fin" id="cnd" type="number" value="3"></div>
+              <div class="ff" style="margin-bottom:13px;"><div class="flb">Rate Prompt (After N Opens)</div><input class="fin" id="cro" type="number" value="5"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-g" onclick="saveAppCfg()">Save</button>
+                <button class="btn btn-gh" onclick="cpCfg()">Copy for HTML</button>
+              </div>
+              <div class="code" id="gcfg" style="margin-top:10px;">// Save karo to generate</div>
+            </div>
+            <div class="pnl">
+              <div class="ph"><div><div class="pt">About</div></div></div>
+              <div style="font-size:12px;color:var(--t2);line-height:1.9;">
+                Digital Tasbih Admin v1.0<br>
+                Database: <span style="color:var(--em);">Firebase Realtime DB</span><br>
+                Hosting: <span style="color:var(--blue);">GitHub Pages</span><br>
+                App: <span style="color:var(--gold);">PWA → TWA → Play Store</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- APP DHIKR EDIT PAGE -->
+      <div class="page" id="pg-appdhikr">
+        <div class="pnl">
+          <div class="ph">
+            <div><div class="pt">✏️ App Dhikr Edit</div><div class="ps">Existing dhikr edit, delete aur naye add karo</div></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-g btn-sm" onclick="importAppDhikrData()" id="importDhikrBtn">📥 Import from App</button>
+              <button class="btn btn-em btn-sm" onclick="showAddDhikrForm()">+ Add New</button>
+            </div>
+          </div>
+          <div id="appDhikrList"><div class="empty"><div class="ei">📿</div><div class="et">Page load hone pe data aayega</div></div></div>
+        </div>
+      </div>
+
+      <!-- APP DHIKR MODAL -->
+      <div class="dhikr-modal" id="appDhikrForm">
+        <div class="dm-box">
+          <div class="dm-head">
+            <div>
+              <div class="pt" id="appDhikrFormTitle">📿 Naya Dhikr Add</div>
+              <div class="ps">Firebase mein save hoga — app auto-update ho jaayega</div>
+            </div>
+            <button class="btn btn-gh btn-sm" onclick="hideAddDhikrForm()">✕ Close</button>
+          </div>
+          <div class="dm-body">
+            <input type="hidden" id="editDhikrOrigId">
+
+            <!-- Row 1: Basic Info - 4 cols -->
+            <div class="fg4" style="margin-bottom:9px;">
+              <div class="ff"><div class="flb">ID *</div><input class="fin" id="appDId" placeholder="subhanallah"><div class="fhi">lowercase, no spaces</div></div>
+              <div class="ff"><div class="flb">Icon / Emoji</div><input class="fin" id="appDIcon" placeholder="📿"></div>
+              <div class="ff"><div class="flb">Target Count</div><input class="fin" id="appDTgt" type="number" value="33"></div>
+              <div class="ff"><div class="flb">Order No.</div><input class="fin" id="appDOrder" type="number" value="99"></div>
+            </div>
+
+            <!-- Row 2: Arabic - full width -->
+            <div class="ff" style="margin-bottom:9px;">
+              <div class="flb">Arabic Text *</div>
+              <input class="fin" id="appDAr" style="direction:rtl;font-family:Amiri,serif;font-size:20px;" placeholder="سُبْحَانَ اللّٰه">
+            </div>
+
+            <!-- Row 3: Names - 4 cols -->
+            <div style="font-size:9px;font-weight:700;color:var(--t3);letter-spacing:2px;margin:10px 0 6px;">NAMES (App mein title)</div>
+            <div class="fg4" style="margin-bottom:9px;">
+              <div class="ff"><div class="flb">Hindi</div><input class="fin" id="appDHi" placeholder="सुब्हान अल्लाह"></div>
+              <div class="ff"><div class="flb">English</div><input class="fin" id="appDEn" placeholder="SubhanAllah"></div>
+              <div class="ff"><div class="flb">Urdu</div><input class="fin" id="appDUr" style="direction:rtl;" placeholder="سبحان اللہ"></div>
+              <div class="ff"><div class="flb">Bengali</div><input class="fin" id="appDBn" placeholder="সুবহানাল্লাহ"></div>
+            </div>
+
+            <!-- Row 4: Meanings - 3 cols -->
+            <div style="font-size:9px;font-weight:700;color:var(--t3);letter-spacing:2px;margin:10px 0 6px;">MEANINGS (App mein neeche)</div>
+            <div class="fg3" style="margin-bottom:14px;">
+              <div class="ff"><div class="flb">Hindi Meaning</div><input class="fin" id="appDMeHi" placeholder="अल्लाह पाक है"></div>
+              <div class="ff"><div class="flb">English Meaning</div><input class="fin" id="appDMeEn" placeholder="Glory be to Allah"></div>
+              <div class="ff"><div class="flb">Urdu Meaning</div><input class="fin" id="appDMeUr" style="direction:rtl;" placeholder="اللہ پاک ہے"></div>
+            </div>
+
+            <div style="display:flex;gap:9px;">
+              <button class="btn btn-em" onclick="saveAppDhikr()">💾 Save Dhikr</button>
+              <button class="btn btn-gh" onclick="hideAddDhikrForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 99 NAMES EDIT PAGE -->
+      <div class="page" id="pg-asma">
+        <div class="pnl">
+          <div class="ph">
+            <div><div class="pt">✨ 99 Names Edit</div><div class="ps">Allah ke 99 naam edit, delete aur add karo</div></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-g btn-sm" onclick="importAsmaData()" id="importAsmaBtn">📥 Import 99 Names</button>
+              <button class="btn btn-em btn-sm" onclick="showAddAsmaForm()">+ Add New</button>
+            </div>
+          </div>
+          <div id="asmaList"><div class="empty"><div class="ei">✨</div><div class="et">Page load hone pe data aayega</div></div></div>
+        </div>
+        <div class="pnl" id="asmaForm" style="display:none;">
+          <div class="ph">
+            <div><div class="pt" id="asmaFormTitle">Naya Naam</div></div>
+            <button class="btn btn-gh btn-sm" onclick="hideAsmaForm()">✕</button>
+          </div>
+          <div class="fg">
+            <input type="hidden" id="editAsmaN">
+            <div class="ff"><div class="flb">Number *</div><input class="fin" id="asmaNum" type="number" placeholder="100"></div>
+            <div class="ff"><div class="flb">Transliteration</div><input class="fin" id="asmaTr" placeholder="Ar-Rahman"></div>
+            <div class="ff full"><div class="flb">Arabic *</div><input class="fin" id="asmaAr" style="direction:rtl;font-family:Amiri,serif;font-size:18px;" placeholder="اَلرَّحْمٰن"></div>
+            <div class="ff"><div class="flb">Hindi Meaning</div><input class="fin" id="asmaMeHi" placeholder="बड़ा मेहरबान"></div>
+            <div class="ff"><div class="flb">English Meaning</div><input class="fin" id="asmaMeEn" placeholder="The Most Gracious"></div>
+            <div class="ff"><div class="flb">Urdu Meaning</div><input class="fin" id="asmaMeUr" style="direction:rtl;" placeholder="بڑا مہربان"></div>
+            <div class="ff"><div class="flb">Bengali Meaning</div><input class="fin" id="asmaMeBn" placeholder="পরম দয়ালু"></div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap;">
+            <button class="btn btn-em" onclick="saveAsmaEntry()">💾 Save</button>
+            <button class="btn btn-gh" onclick="hideAsmaForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MIGRATION PAGE -->
+      <div class="page" id="pg-migrate">
+        <div class="pnl">
+          <div class="ph">
+            <div><div class="pt">Migration Center</div><div class="ps">Ab alag migrate.html ki zaroorat nahi - sab yahin se seed hoga</div></div>
+            <button class="btn btn-gh btn-sm" onclick="loadMigrationStatus()">Refresh</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px;">
+            <div style="background:var(--s1);border-radius:10px;padding:12px;border:1px solid var(--b2);text-align:center;">
+              <div style="font-size:19px;margin-bottom:5px;">D</div>
+              <div style="font-size:10px;color:var(--t2);margin-bottom:4px;">App Dhikr</div>
+              <div style="font-size:18px;font-weight:800;color:var(--gold);" id="migDhikrCount">0</div>
+            </div>
+            <div style="background:var(--s1);border-radius:10px;padding:12px;border:1px solid var(--b2);text-align:center;">
+              <div style="font-size:19px;margin-bottom:5px;">G</div>
+              <div style="font-size:10px;color:var(--t2);margin-bottom:4px;">Guide</div>
+              <div style="font-size:18px;font-weight:800;color:var(--gold);" id="migGuideCount">0</div>
+            </div>
+            <div style="background:var(--s1);border-radius:10px;padding:12px;border:1px solid var(--b2);text-align:center;">
+              <div style="font-size:19px;margin-bottom:5px;">N</div>
+              <div style="font-size:10px;color:var(--t2);margin-bottom:4px;">99 Names</div>
+              <div style="font-size:18px;font-weight:800;color:var(--gold);" id="migAsmaCount">0</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <button class="btn btn-em" id="migRunAllBtn" onclick="runFullMigration()">Run Full Migration</button>
+            <button class="btn btn-g" id="migDhikrBtn" onclick="runMigrationDhikr()">App Dhikr</button>
+            <button class="btn btn-g" id="migGuideBtn" onclick="runMigrationGuide()">Guide</button>
+            <button class="btn btn-g" id="migAsmaBtn" onclick="runMigrationAsma()">99 Names</button>
+          </div>
+          <div class="code" id="migrationStatus">Ready. Login ke baad yahin se migration chalao.</div>
+          <div class="code" id="migrationLog" style="margin-top:10px;max-height:220px;overflow:auto;">No migration run yet.</div>
+        </div>
+      </div>
+
+<!-- DAILY DHIKR MANAGER PAGE -->
+      <div class="page" id="pg-daily">
+        <div class="pnl">
+          <div class="ph">
+            <div><div class="pt">🌟 Daily Dhikr Manager</div><div class="ps">Sections banao — hadith + multiple dhikr items per section. Complete hone pe auto-next!</div></div>
+            <button class="btn btn-em btn-sm" onclick="showAddSectionForm()">+ New Section</button>
+          </div>
+          <div id="dailySectionList"><div class="empty"><div class="ei">🌟</div><div class="et">Koi section nahi hai. New Section banao.</div></div></div>
+        </div>
+
+        <!-- ADD/EDIT SECTION FORM — shown inline, no overlay -->
+        <div class="pnl" id="sectionForm" style="display:none;">
+          <div class="ph">
+            <div><div class="pt" id="sectionFormTitle">New Section</div><div class="ps">Hadith + dhikr items add karo</div></div>
+            <button class="btn btn-gh btn-sm" onclick="hideSectionForm()">✕ Cancel</button>
+          </div>
+          <input type="hidden" id="editSectionId">
+
+          <!-- Basic Info -->
+          <div style="background:var(--s1);border-radius:10px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1.5px;margin-bottom:12px;">📋 SECTION INFO</div>
+            <div class="fg">
+              <div class="ff">
+                <div class="flb">Section ID *</div>
+                <input class="fin" id="secId" placeholder="e.g. subah_dhikr">
+                <div class="fhi">Lowercase, no spaces, unique</div>
+              </div>
+              <div class="ff">
+                <div class="flb">Order (1,2,3...)</div>
+                <input class="fin" id="secOrder" type="number" value="1">
+              </div>
+              <div class="ff full">
+                <div class="flb">Section Title *</div>
+                <input class="fin" id="secTitle" placeholder="🌅 Subah Ka Dhikr">
+              </div>
+            </div>
+          </div>
+
+          <!-- Hadith Info -->
+          <div style="background:var(--s1);border-radius:10px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1.5px;margin-bottom:12px;">📖 HADITH (Optional)</div>
+            <div class="fg">
+              <div class="ff full">
+                <div class="flb">Arabic Hadith Text</div>
+                <textarea class="fta" id="secHadithAr" style="direction:rtl;font-family:Amiri,serif;font-size:16px;min-height:65px;" placeholder="من قال سبحان الله مائة مرة..."></textarea>
+              </div>
+              <div class="ff full">
+                <div class="flb">Hadith Translation / Matlab</div>
+                <textarea class="fta" id="secHadithText" placeholder="Jo banda din mein 100 baar SubhanAllah padhe..."></textarea>
+              </div>
+              <div class="ff full">
+                <div class="flb">Reference</div>
+                <input class="fin" id="secHadithRef" placeholder="Sahih Muslim 2691 / Tirmidhi 3468">
+              </div>
+            </div>
+          </div>
+
+          <!-- Dhikr Items -->
+          <div style="background:var(--s1);border-radius:10px;padding:14px;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+              <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1.5px;">📿 DHIKR ITEMS <span style="color:var(--t3);font-size:9px;">(ek section mein multiple dhikr ho sakte hain)</span></div>
+              <button class="btn btn-gh btn-sm" onclick="addDhikrItemRow()">+ Dhikr Add Karo</button>
+            </div>
+            <div id="secDhikrItems">
+              <div style="font-size:12px;color:var(--t3);text-align:center;padding:14px;">Koi dhikr nahi — "+ Dhikr Add Karo" click karo</div>
+            </div>
+          </div>
+
+          <!-- Save Buttons -->
+          <div style="display:flex;gap:9px;flex-wrap:wrap;">
+            <button class="btn btn-em" style="flex:2;justify-content:center;" onclick="saveSectionData()">💾 Section Save Karo</button>
+            <button class="btn btn-gh" onclick="hideSectionForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="conf"><div class="cbox">
+  <div class="ct" id="ct">Sure?</div>
+  <div class="cb" id="cb">Ye nahi palti.</div>
+  <div class="cr">
+    <button class="btn btn-gh" onclick="clsC()">Cancel</button>
+    <button class="btn btn-dn" id="cok">Confirm</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+let FBURL='',FBKEY='',FB_TOKEN='',FB_API_KEY='';
+function getCreds(){return{u:localStorage.getItem('au')||'admin',p:localStorage.getItem('ap')||'tasbih786'};}
+
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    const sp=document.getElementById('splash');
+    sp.style.opacity='0';
+    setTimeout(()=>{sp.remove();document.getElementById('loginWrap').style.display='flex';},500);
+  },1300);
+});
+
+
+// ═══ FIREBASE AUTH ═══
+async function fbSignIn(email, password){
+  const apiKey=localStorage.getItem('fbkey')||'AIzaSyB3ksliKr_-RBXlwqU12WP1-8cMwIWXmho';
+  if(!apiKey||!email||!password){
+    toast('⚠️ API Key, Email, Password zaroori hain','warn');
+    return false;
+  }
+  try{
+    const url='https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+apiKey;
+    const resp=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:email,password:password,returnSecureToken:true})
+    });
+    const data=await resp.json();
+    if(data.idToken){
+      FB_TOKEN=data.idToken;
+      localStorage.setItem('fb_token_time', Date.now().toString());
+      setTimeout(function(){fbRefreshToken(data.refreshToken);}, 55*60*1000);
+      return true;
+    } else {
+      // Show Firebase error message
+      const msg=data.error&&data.error.message||'Unknown error';
+      toast('Auth Error: '+msg,'err');
+      return false;
+    }
+  }catch(e){
+    toast('Auth fetch error: '+e.message,'err');
+    return false;
+  }
+}
+
+// Ensure we have valid token before any write
+async function ensureToken(){
+  if(FB_TOKEN) return true;
+  const email=localStorage.getItem('fb_email')||'';
+  const pass=localStorage.getItem('fb_pass')||'';
+  if(!email||!pass){
+    toast('Settings mein Firebase Auth Email+Password daalo!','warn');
+    return false;
+  }
+  return await fbSignIn(email, pass);
+}
+
+async function fbRefreshToken(refreshToken){
+  try{
+    const url='https://securetoken.googleapis.com/v1/token?key='+FB_API_KEY;
+    const resp=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({grant_type:'refresh_token',refresh_token:refreshToken})
+    });
+    const data=await resp.json();
+    if(data.id_token){
+      FB_TOKEN=data.id_token;
+      setTimeout(()=>fbRefreshToken(data.refresh_token), 55*60*1000);
+    }
+  }catch(e){}
+}
+
+async function login(){
+  const u=G('lu').value.trim(),p=G('lp').value,cr=getCreds();
+  if(u===cr.u&&p===cr.p){
+    G('loginWrap').style.display='none';
+    G('app').style.display='block';
+    G('sbun').textContent=u;
+    init();
+    // Also sign in to Firebase if credentials saved
+    const fbEmail=localStorage.getItem('fb_email')||'';
+    const fbPass=localStorage.getItem('fb_pass')||'';
+    FB_API_KEY=localStorage.getItem('fbkey')||'AIzaSyB3ksliKr_-RBXlwqU12WP1-8cMwIWXmho';
+    if(fbEmail && fbPass){
+      fbSignIn(fbEmail, fbPass).then(ok=>{
+        if(ok)toast('🔒 Firebase Auth: Connected securely');
+      });
+    }
+  } else {
+    const e=G('lerr');e.style.display='block';G('lp').value='';
+    setTimeout(()=>e.style.display='none',3000);
+    const card=document.querySelector('.lcard');
+    card.style.animation='shk .3s ease';
+    setTimeout(()=>card.style.animation='',400);
+  }
+}
+function logout(){if(!confirm('Logout?'))return;G('app').style.display='none';G('loginWrap').style.display='flex';G('lu').value='';G('lp').value='';}
+
+const sty=document.createElement('style');
+sty.textContent='@keyframes shk{0%,100%{transform:none}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}';
+document.head.appendChild(sty);
+
+function init(){
+  // Hardcoded Firebase defaults — same as main app
+  const DEFAULT_FBURL='https://digital-tasbih-19bca-default-rtdb.asia-southeast1.firebasedatabase.app';
+  const DEFAULT_FBKEY='AIzaSyB3ksliKr_-RBXlwqU12WP1-8cMwIWXmho';
+  const savedUrl=localStorage.getItem('fburl')||DEFAULT_FBURL;
+  const savedKey=localStorage.getItem('fbkey')||DEFAULT_FBKEY;
+  FBURL=savedUrl;
+  FBKEY=savedKey;
+  FB_API_KEY=savedKey;
+  // Pre-fill settings inputs with defaults if not already set
+  if(!localStorage.getItem('fburl')) localStorage.setItem('fburl',DEFAULT_FBURL);
+  if(!localStorage.getItem('fbkey')) localStorage.setItem('fbkey',DEFAULT_FBKEY);
+  // Pre-fill Settings page inputs
+  const su=G('sfurl');if(su&&!su.value)su.value=FBURL;
+  const sk=G('sfkey');if(sk&&!sk.value)sk.value=FBKEY;
+  ldInputs();drawChart();
+  checkFB();
+  autoFbSignIn();
+}
+
+async function autoFbSignIn(){
+  const email=localStorage.getItem('fb_email')||'';
+  const pass=localStorage.getItem('fb_pass')||'';
+  const apiKey=localStorage.getItem('fbkey')||'AIzaSyB3ksliKr_-RBXlwqU12WP1-8cMwIWXmho';
+  const authEl=document.getElementById('authStatus');
+
+  if(!email||!pass){
+    if(authEl){authEl.textContent='⚠️ Auth: Email/Pass missing';authEl.style.color='var(--red)';}
+    return;
+  }
+
+  if(authEl){authEl.textContent='🔄 Auth: Signing in...';authEl.style.color='var(--t2)';}
+
+  // Direct call with full debug
+  try{
+    const url='https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+apiKey;
+    const resp=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:email,password:pass,returnSecureToken:true})
+    });
+    const data=await resp.json();
+
+    if(data.idToken){
+      FB_TOKEN=data.idToken;
+      if(authEl){authEl.textContent='🔒 Auth: Connected';authEl.style.color='var(--em)';}
+      toast('🔒 Firebase Auth connected! Write access ready.');
+    } else {
+      const errMsg=data.error&&data.error.message||'Unknown';
+      if(authEl){authEl.textContent='❌ Auth: '+errMsg;authEl.style.color='var(--red)';}
+      // Show helpful fix based on error
+      if(errMsg==='EMAIL_NOT_FOUND'){
+        toast('❌ Email Firebase mein register nahi — Authentication > Users mein add karo','err');
+      } else if(errMsg==='INVALID_PASSWORD'){
+        toast('❌ Password galat hai — Firebase Authentication mein check karo','err');
+      } else if(errMsg==='INVALID_LOGIN_CREDENTIALS'){
+        toast('❌ Email ya Password galat — Firebase Authentication > Users mein check karo','err');
+      } else if(errMsg.includes('API_KEY_INVALID')){
+        toast('❌ API Key galat — Settings mein Web API Key sahi daalo','err');
+      } else if(errMsg==='TOO_MANY_ATTEMPTS_TRY_LATER'){
+        toast('❌ Bahut zyada attempts — kuch der baad try karo','err');
+      } else {
+        toast('❌ Auth Error: '+errMsg,'err');
+      }
+    }
+  }catch(e){
+    if(authEl){authEl.textContent='❌ Auth: Network Error';authEl.style.color='var(--red)';}
+    toast('❌ Network error: '+e.message,'err');
+  }
+}
+
+function ldInputs(){
+  const ids={sfurl:'fburl',sfkey:'fbkey',cps:'cps',cas:'cas',cnd:'cnd',cro:'cro',aai:'adapp',abi:'adban'};
+  Object.entries(ids).forEach(([el,key])=>{const e=G(el);if(e)e.value=localStorage.getItem(key)||'';});
+  if(G('cnd')&&!localStorage.getItem('cnd'))G('cnd').value='3';
+  if(G('cro')&&!localStorage.getItem('cro'))G('cro').value='5';
+  const aa=localStorage.getItem('adapp')||'',ab=localStorage.getItem('adban')||'';
+  if(aa||ab)genAd(aa,ab);
+  if(aa&&G('st3')){G('st3').textContent='Configured';G('st3').className='bdg b-gr';}
+}
+
+const TTLS={dash:'Dashboard',notif:'Notifications',announce:'Announcements',dhikr:'Extra Dhikr',duas:'Custom Duas',hadith:'Hadith of Day',ads:'Ad Settings',setup:'Setup Guide',sett:'Settings',appdhikr:'App Dhikr Edit',asma:'99 Names Edit',migrate:'Migration Center',daily:'Daily Dhikr',appsett:'App Settings'};
+function go(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.sb-it').forEach(i=>i.classList.remove('on'));
+  const pg=G('pg-'+id);
+  if(!pg){console.warn('Page not found: pg-'+id);return;}
+  pg.classList.add('on');
+  if(el)el.classList.add('on');
+  G('ptit').textContent=TTLS[id]||id;
+  G('pcrb').textContent='Digital Tasbih → '+(TTLS[id]||id);
+  if(id==='appdhikr')loadAppDhikrList();
+  if(id==='asma')loadAsmaList();
+  if(id==='migrate')loadMigrationStatus();
+  if(id==='notif')loadNotifs();
+  if(id==='dhikr')loadDList();
+  if(id==='daily')loadDailySectionList();
+  if(id==='announce')loadAnnouncements();
+  if(id==='duas')loadDuaList();
+  if(id==='appsett'){loadAppSettingsInputs();loadAppStats();}
+}
+
+function fbQ(path,write){
+  if(write && FB_TOKEN){
+    return FBURL+path+'.json?auth='+FB_TOKEN;
+  }
+  return FBURL+path+'.json';
+}
+async function fbGET(path){
+  try{
+    const url=fbQ(path);
+    const r=await fetch(url);
+    if(r.status===404){return null;} // empty path = null, not error
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();
+    return txt?JSON.parse(txt):null;
+  }catch(e){
+    toast('Firebase Error: '+e.message,'err');
+    return null;
+  }
+}
+async function fbPOST(path,data){
+  const ok=await ensureToken();
+  if(!ok) return null;
+  try{
+    const r=await fetch(fbQ(path,true),{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();return txt?JSON.parse(txt):true;
+  }catch(e){toast('Firebase Error: '+e.message,'err');return null;}
+}
+async function fbPUT(path,data){
+  const ok=await ensureToken();
+  if(!ok) return null;
+  try{
+    const r=await fetch(fbQ(path,true),{method:'PUT',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();return txt?JSON.parse(txt):true;
+  }catch(e){toast('Firebase Error: '+e.message,'err');return null;}
+}
+async function fbPATCH(path,data){
+  const ok=await ensureToken();
+  if(!ok) return null;
+  try{
+    const r=await fetch(fbQ(path,true),{method:'PATCH',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();return txt?JSON.parse(txt):true;
+  }catch(e){toast('Firebase Error: '+e.message,'err');return null;}
+}
+async function fbDEL(path){
+  const ok=await ensureToken();
+  if(!ok) return null;
+  try{
+    const r=await fetch(fbQ(path,true),{method:'DELETE'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return true;
+  }catch(e){toast('Firebase Error: '+e.message,'err');return null;}
+}
+
+async function checkFB(){
+  if(!FBURL){toast('Settings mein Database URL daalo','warn');return;}
+  G('ctxt').textContent='Connecting...';
+  // Use root path — works with REST API + .read:true rules
+  try{
+    const url=FBURL+'/.json?shallow=true';
+    const resp=await fetch(url);
+    const ok=resp.status===200||resp.status===204||resp.status===null;
+    // 200=has data, 204=empty db, both mean connected
+    const isOk=(resp.status<500);
+    G('cdot').classList.toggle('off',!isOk);
+    G('ctxt').textContent=isOk?'Firebase Connected':'Connection Failed';
+    const st=G('st1');if(st){st.textContent=isOk?'Connected':'Error ('+resp.status+')';st.className=isOk?'bdg b-gr':'bdg b-rd';}
+    const s4=G('s4');if(s4)s4.textContent=isOk?'OK':'ERR';
+    const s4s=G('s4s');if(s4s)s4s.textContent=isOk?'Connected':'Failed';
+    if(isOk){G('setupAlert').classList.remove('show');loadDash();}
+    else{toast('Firebase Error: HTTP '+resp.status+' — URL check karo','err');}
+  }catch(e){
+    G('cdot').classList.add('off');
+    G('ctxt').textContent='Connection Failed';
+    toast('Firebase Error: '+e.message,'err');
+  }
+}
+
+async function loadDash(){
+  const [n,d,h]=await Promise.all([fbGET('/notifications'),fbGET('/extra_dhikr'),fbGET('/hadith')]);
+  if(G('s1'))G('s1').textContent=n&&typeof n==='object'?Object.keys(n).length:0;
+  if(G('s2'))G('s2').textContent=d&&typeof d==='object'?Object.keys(d).length:0;
+  if(G('s3'))G('s3').textContent=(h&&h.active)?1:0;
+}
+
+function drawChart(){
+  const days=['M','T','W','T','F','S','S'],v=[2,1,3,1,4,3,2],mx=4;
+  G('chart').innerHTML=days.map((d,i)=>'<div class="bc"><div class="bnum">'+v[i]+'</div><div class="bar '+(i>=4?'em':'go')+'" style="height:'+Math.round(v[i]/mx*100)+'px"></div><div class="bday">'+d+'</div></div>').join('');
+}
+
+function prvN(){G('pnt').textContent=G('nt').value||'Title';G('pnb').textContent=G('nb').value||'Message...';G('pni').textContent=G('ni').value||'📿';}
+
+async function sendNotif(){
+  const t=G('nt').value.trim(),b=G('nb').value.trim();
+  if(!t||!b){toast('Title aur Message zaroori hain','warn');return;}
+  const r=await fbPOST('/notifications',{title:t,body:b,icon:G('ni').value.trim()||'📿',lang:G('nl').value||'all',active:G('na').checked,timestamp:Date.now()});
+  if(r){toast('Notification save ho gayi!');clrN();loadNotifs();loadDash();}
+}
+
+async function loadNotifs(){
+  const data=await fbGET('/notifications');const tb=G('ntb');
+  if(!data||typeof data!=='object'||!Object.keys(data).length){tb.innerHTML='<tr><td colspan="5"><div class="empty"><div class="ei">🔔</div><div class="et">Koi notification nahi hai.</div></div></td></tr>';return;}
+  const entries=Object.entries(data).sort((a,b)=>(b[1].timestamp||0)-(a[1].timestamp||0));
+  window._nKeys=Object.keys(data);
+  var html='';
+  entries.forEach(function(entry){
+    var k=entry[0],n=entry[1];
+    html+='<tr>';
+    html+='<td><b>'+(n.icon||'')+' '+(n.title||'')+'</b></td>';
+    html+='<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t2);">'+(n.body||'')+'</td>';
+    html+='<td><span class="bdg b-bl">'+(n.lang||'all')+'</span></td>';
+    html+='<td><span class="bdg '+(n.active?'b-gr':'b-rd')+'">'+(n.active?'Active':'Off')+'</span></td>';
+    html+='<td style="display:flex;gap:5px;">';
+    html+='<button class="btn btn-gh btn-sm" data-k="'+k+'" data-a="'+(n.active?0:1)+'" onclick="togNBtn(this)">'+(n.active?'Off':'On')+'</button>';
+    html+='<button class="btn btn-dn btn-sm" data-k="'+k+'" onclick="delNBtn(this)">Del</button>';
+    html+='</td></tr>';
+  });
+  tb.innerHTML=html;
+}
+
+async function togN(k,a){await fbPATCH('/notifications/'+k,{active:a});toast(a?'Activated':'Deactivated');loadNotifs();}
+function togNBtn(btn){var k=btn.getAttribute('data-k');var a=btn.getAttribute('data-a')==='1';togN(k,a);}
+function delNBtn(btn){var k=btn.getAttribute('data-k');delN(k);}
+function delN(k){showConf('Delete?','Permanently delete ho jaayegi.',async function(){await fbDEL('/notifications/'+k);toast('Deleted');loadNotifs();loadDash();});}
+function delDBtn(btn){var k=btn.getAttribute('data-k');delD(k);}
+function clrN(){['nt','nb'].forEach(i=>G(i).value='');G('ni').value='📿';prvN();}
+
+async function saveDhikr(){
+  const id=V('di'),ar=V('da');
+  if(!id){toast('ID zaroori hai','warn');return;}
+  if(!ar){toast('Arabic text zaroori hai','warn');return;}
+  const r=await fbPUT('/extra_dhikr/'+id,{id,ar,lo:{hi:V('dh'),en:V('de'),ur:V('du'),ar:V('da'),bn:V('db')},me:{hi:V('dmh'),en:V('dme'),ur:'',ar:'',bn:''},icon:V('dc')||'📿',tgt:parseInt(V('dt'))||100,active:G('dact').checked});
+  if(r){toast('Dhikr save ho gaya!');clrD();loadDList();loadDash();}
+}
+
+async function loadDList(){
+  const data=await fbGET('/extra_dhikr');const tb=G('dtb');
+  if(!data||typeof data!=='object'||!Object.keys(data).length){tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="ei">📿</div><div class="et">Koi dhikr nahi hai.</div></div></td></tr>';return;}
+  var html3='';
+  Object.entries(data).forEach(function(e3){
+    var k=e3[0],d=e3[1];
+    html3+='<tr><td class="tar">'+(d.ar||'')+'</td>';
+    html3+='<td>'+(d.lo&&d.lo.hi||'')+'</td>';
+    html3+='<td>'+(d.lo&&d.lo.en||'')+'</td>';
+    html3+='<td><span class="bdg b-go">'+(d.tgt||100)+'x</span></td>';
+    html3+='<td><span class="bdg '+(d.active?'b-gr':'b-rd')+'">'+(d.active?'Active':'Off')+'</span></td>';
+    html3+='<td><button class="btn btn-dn btn-sm" data-k="'+k+'" onclick="delDBtn(this)">Del</button></td></tr>';
+  });
+  tb.innerHTML=html3;
+}
+
+function delD(k){showConf('Delete Dhikr?','App se hata diya jaayega.',async()=>{await fbDEL('/extra_dhikr/'+k);toast('Deleted');loadDList();loadDash();});}
+function clrD(){['di','da','dh','de','du','db','dmh','dme'].forEach(i=>G(i)&&(G(i).value=''));G('dc').value='📿';G('dt').value='100';}
+
+function prvH(){if(G('harp'))G('harp').textContent=G('har').value||'Arabic...';if(G('htxp'))G('htxp').textContent=G('htx').value||'Translation...';if(G('hrfp'))G('hrfp').textContent=G('hrf').value||'Reference';}
+
+async function saveHadith(){
+  const text=G('htx').value.trim();if(!text){toast('Translation zaroori hai','warn');return;}
+  const r=await fbPUT('/hadith',{text,ar_text:V('har'),ref:V('hrf'),lang:V('hlng')||'hi',active:G('hat').checked,timestamp:Date.now()});
+  if(r){toast('Hadith publish ho gayi!');loadDash();}
+}
+async function deactH(){showConf('Remove Hadith?','App se hata di jaayegi.',async()=>{await fbPATCH('/hadith',{active:false});toast('Hadith removed');});}
+async function togH(){if(FBURL&&FBKEY)await fbPATCH('/hadith',{active:G('hat').checked});toast(G('hat').checked?'Hadith active':'Hadith inactive');}
+
+function saveAds(){
+  const aa=V('aai'),ab=V('abi'),t=G('atm').checked;
+  localStorage.setItem('adapp',aa);localStorage.setItem('adban',ab);
+  genAd(aa,ab,t);toast('Ad settings saved!');
+  if(aa&&G('st3')){G('st3').textContent='Configured';G('st3').className='bdg b-gr';}
+}
+function genAd(app,ban,test){
+  if(!G('adcode'))return;
+  var id=test?'ca-app-pub-3940256099942544/6300978111':(ban||'YOUR_BANNER_ID');
+  var appId=app||'YOUR_APP_ID';
+  var code='';
+  code+='<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+appId+'" crossorigin="anonymous"><\/script>\n';
+  code+='<ins class="adsbygoogle" style="display:block;width:320px;height:50px;"\n';
+  code+='     data-ad-client="'+appId+'"\n';
+  code+='     data-ad-slot="'+id+'"\n';
+  code+='     data-ad-format="banner"></ins>\n';
+  code+='<script>(adsbygoogle=window.adsbygoogle||[]).push({});<\/script>';
+  G('adcode').textContent=code;
+}
+function cpAd(){navigator.clipboard.writeText(G('adcode').textContent||'').then(()=>toast('Copied!'));}
+
+function saveFBCfg(){
+  const url=V('sfurl');
+  const key=V('sfkey')||'AIzaSyB3ksliKr_-RBXlwqU12WP1-8cMwIWXmho';
+  const email=V('sfbemail')||'';
+  const pass=document.getElementById('sfbpass')&&document.getElementById('sfbpass').value||'';
+  if(!url){toast('Database URL zaroori hai','warn');return;}
+  localStorage.setItem('fburl',url);
+  localStorage.setItem('fbkey',key);
+  if(email) localStorage.setItem('fb_email',email);
+  if(pass) localStorage.setItem('fb_pass',pass);
+  FBURL=url; FBKEY=key; FB_API_KEY=key;
+  toast('✅ Config saved!');
+  checkFB();
+  // Try Firebase Auth
+  if(email && pass){
+    setTimeout(autoFbSignIn, 500);
+  }
+}
+
+function saveCreds(){
+  const u=V('su'),p=V('sp'),pc=V('spc');
+  if(!u||!p){toast('Dono fields zaroori hain','warn');return;}
+  if(p!==pc){toast('Passwords match nahi kar rahe','err');return;}
+  localStorage.setItem('au',u);localStorage.setItem('ap',p);
+  G('sbun').textContent=u;toast('Password update ho gaya!');
+  ['su','sp','spc'].forEach(i=>G(i)&&(G(i).value=''));
+}
+
+function saveAppCfg(){
+  ['cps','cas','cnd','cro'].forEach(function(i){localStorage.setItem(i,V(i));});
+  var ps=V('cps')||'https://play.google.com/store/apps/details?id=YOUR.APP.ID';
+  var as=V('cas')||'https://apps.apple.com/app/YOUR-APP-ID';
+  var nd=V('cnd')||'3';
+  var ro=V('cro')||'5';
+  var code='const APP_CONFIG={\n';
+  code+="  playStoreUrl:'"+ps+"',\n";
+  code+="  appStoreUrl:'"+as+"',\n";
+  code+='  notifRemindDays:'+nd+',\n';
+  code+='  rateAfterDays:3,\n';
+  code+='  rateAfterOpens:'+ro+',\n';
+  code+='};';
+  if(G('gcfg'))G('gcfg').textContent=code;
+  toast('Config saved!');
+}
+function cpCfg(){navigator.clipboard.writeText(G('gcfg').textContent||'').then(()=>toast('Copied!'));}
+
+// ═══════════════════════════════════
+// APP DHIKR MANAGEMENT
+// ═══════════════════════════════════
+
+// App dhikr is stored in Firebase at /app_dhikr
+// This allows editing the main dhikr list from admin panel
+
+function loadAppDhikrList(){
+  fbGET('/app_dhikr').then(function(data){
+    var el=G('appDhikrList');
+    if(!el)return;
+    if(!data||typeof data!=='object'||!Object.keys(data).length){
+      el.innerHTML='<div class="empty"><div class="ei">📿</div><div class="et">Koi app dhikr nahi hai Firebase mein.<br>Naya add karo ya existing edit karo.</div></div>';
+      return;
+    }
+    var entries=Object.values(data).sort(function(a,b){return (a.order||99)-(b.order||99);});
+    var html='';
+    entries.forEach(function(d,i){
+      html+='<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--b2);">';
+      html+='<div style="font-size:22px;width:32px;text-align:center;">'+(d.icon||'📿')+'</div>';
+      html+='<div style="flex:1;">';
+      html+='<div style="font-family:Amiri,serif;font-size:17px;direction:rtl;color:var(--gold2);">'+(d.ar||'')+'</div>';
+      html+='<div style="font-size:12px;color:var(--t2);margin-top:2px;">'+(d.lo&&d.lo.hi||'')+' • '+(d.lo&&d.lo.en||'')+'</div>';
+      html+='<div style="font-size:10px;color:var(--t3);">ID: '+d.id+' • Target: '+(d.tgt||33)+'×</div>';
+      html+='</div>';
+      html+='<div style="display:flex;gap:6px;">';
+      html+='<button class="btn btn-gh btn-sm" data-did="'+d.id+'" onclick="editAppDhikrBtn(this)">✏️ Edit</button>';
+      html+='<button class="btn btn-dn btn-sm" data-did="'+d.id+'" onclick="delAppDhikrBtn(this)">🗑</button>';
+      html+='</div>';
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  });
+}
+
+function editAppDhikrBtn(btn){
+  var id=btn.getAttribute('data-did');
+  fbGET('/app_dhikr/'+id).then(function(d){
+    if(!d)return;
+    G('editDhikrOrigId').value=id;
+    G('appDId').value=d.id||'';
+    G('appDIcon').value=d.icon||'📿';
+    G('appDAr').value=d.ar||'';
+    G('appDHi').value=(d.lo&&d.lo.hi)||'';
+    G('appDEn').value=(d.lo&&d.lo.en)||'';
+    G('appDUr').value=(d.lo&&d.lo.ur)||'';
+    if(G('appDBn'))G('appDBn').value=(d.lo&&d.lo.bn)||'';
+    G('appDMeHi').value=(d.me&&d.me.hi)||'';
+    G('appDMeEn').value=(d.me&&d.me.en)||'';
+    if(G('appDMeUr'))G('appDMeUr').value=(d.me&&d.me.ur)||'';
+    G('appDTgt').value=d.tgt||33;
+    if(G('appDOrder'))G('appDOrder').value=d.order||99;
+    G('appDhikrFormTitle').textContent='✏️ Dhikr Edit Karo';
+    G('appDhikrForm').classList.add('open');
+    G('appDhikrForm').scrollTop=0;
+  });
+}
+
+function delAppDhikrBtn(btn){
+  var id=btn.getAttribute('data-did');
+  showConf('Delete Dhikr?','Ye dhikr Firebase se delete ho jaayega.',async function(){
+    await fbDEL('/app_dhikr/'+id);
+    toast('🗑 Dhikr deleted');
+    loadAppDhikrList();
+  });
+}
+
+function showAddDhikrForm(){
+  G('editDhikrOrigId').value='';
+  ['appDId','appDAr','appDHi','appDEn','appDUr','appDBn','appDMeHi','appDMeEn','appDMeUr'].forEach(function(id){if(G(id))G(id).value='';});
+  if(G('appDIcon'))G('appDIcon').value='📿';
+  if(G('appDTgt'))G('appDTgt').value='33';
+  if(G('appDOrder'))G('appDOrder').value='99';
+  G('appDhikrFormTitle').textContent='📿 Naya Dhikr Add';
+  G('appDhikrForm').classList.add('open');
+  G('appDhikrForm').scrollTop=0;
+}
+
+function hideAddDhikrForm(){
+  G('appDhikrForm').classList.remove('open');
+}
+
+async function saveAppDhikr(){
+  var id=V('appDId');var ar=V('appDAr');
+  if(!id){toast('ID zaroori hai','warn');return;}
+  if(!ar){toast('Arabic text zaroori hai','warn');return;}
+  var origId=G('editDhikrOrigId').value;
+
+  // Get current list to auto-assign order if new entry
+  var currentOrder=parseInt(G('appDOrder')&&G('appDOrder').value)||999;
+
+  var data={
+    id:id, ar:ar, icon:V('appDIcon')||'📿',
+    lo:{hi:V('appDHi'), en:V('appDEn'), ur:V('appDUr'), ar:ar, bn:V('appDBn')||''},
+    me:{hi:V('appDMeHi'), en:V('appDMeEn'), ur:V('appDMeUr')||'', ar:'', bn:''},
+    tgt:parseInt(V('appDTgt'))||33,
+    order:currentOrder
+  };
+  if(origId && origId!==id){
+    await fbDEL('/app_dhikr/'+origId);
+  }
+  var r=await fbPUT('/app_dhikr/'+id, data);
+  if(r){
+    toast('✅ Dhikr saved! App reload pe naya data aayega.');
+    hideAddDhikrForm();
+    loadAppDhikrList();
+  }
+}
+
+// ═══════════════════════════════════
+// 99 NAMES MANAGEMENT
+// ═══════════════════════════════════
+
+function loadAsmaList(){
+  fbGET('/app_asma').then(function(data){
+    var el=G('asmaList');
+    if(!el)return;
+    if(!data||typeof data!=='object'||!Object.keys(data).length){
+      el.innerHTML='<div class="empty"><div class="ei">✨</div><div class="et">Firebase mein koi naam nahi.<br>Add karo ya existing import karo.</div></div>';
+      return;
+    }
+    var entries=Object.values(data).sort(function(a,b){return (a.n||0)-(b.n||0);});
+    var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+    entries.forEach(function(d){
+      html+='<div style="background:var(--s1);border-radius:10px;padding:12px;border:1px solid var(--b2);">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+      html+='<span style="font-size:10px;color:var(--gold);font-weight:700;">'+d.n+'</span>';
+      html+='<div style="display:flex;gap:5px;">';
+      html+='<button class="btn btn-gh btn-sm" style="padding:3px 8px;" data-n="'+d.n+'" onclick="editAsmaBtn(this)">✏️</button>';
+      html+='<button class="btn btn-dn btn-sm" style="padding:3px 8px;" data-n="'+d.n+'" onclick="delAsmaBtn(this)">🗑</button>';
+      html+='</div></div>';
+      html+='<div style="font-family:Amiri,serif;font-size:18px;direction:rtl;color:var(--gold2);margin-bottom:3px;">'+(d.ar||'')+'</div>';
+      html+='<div style="font-size:11px;color:var(--t2);">'+(d.tr||'')+'</div>';
+      html+='<div style="font-size:11px;color:var(--t3);">'+(d.me&&d.me.hi||d.me&&d.me.en||'')+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  });
+}
+
+function editAsmaBtn(btn){
+  var n=parseInt(btn.getAttribute('data-n'));
+  fbGET('/app_asma/'+n).then(function(d){
+    if(!d)return;
+    G('editAsmaN').value=n;
+    G('asmaNum').value=d.n||n;
+    G('asmaTr').value=d.tr||'';
+    G('asmaAr').value=d.ar||'';
+    G('asmaMeHi').value=d.me&&d.me.hi||'';
+    G('asmaMeEn').value=d.me&&d.me.en||'';
+    G('asmaMeUr').value=d.me&&d.me.ur||'';
+    G('asmaMeBn').value=d.me&&d.me.bn||'';
+    G('asmaFormTitle').textContent='Naam Edit Karo';
+    G('asmaForm').style.display='block';
+    G('asmaForm').scrollIntoView({behavior:'smooth'});
+  });
+}
+
+function delAsmaBtn(btn){
+  var n=btn.getAttribute('data-n');
+  showConf('Delete Name?','Ye naam Firebase se delete ho jaayega.',async function(){
+    await fbDEL('/app_asma/'+n);
+    toast('🗑 Naam deleted');
+    loadAsmaList();
+  });
+}
+
+function showAddAsmaForm(){
+  G('editAsmaN').value='';
+  ['asmaNum','asmaTr','asmaAr','asmaMeHi','asmaMeEn','asmaMeUr','asmaMeBn'].forEach(function(id){if(G(id))G(id).value='';});
+  G('asmaFormTitle').textContent='Naya Naam Add';
+  G('asmaForm').style.display='block';
+  G('asmaForm').scrollIntoView({behavior:'smooth'});
+}
+
+function hideAsmaForm(){
+  G('asmaForm').style.display='none';
+}
+
+async function saveAsmaEntry(){
+  var n=parseInt(V('asmaNum'));var ar=V('asmaAr');
+  if(!n){toast('Number zaroori hai','warn');return;}
+  if(!ar){toast('Arabic zaroori hai','warn');return;}
+  var origN=G('editAsmaN').value;
+  var data={
+    n:n,ar:ar,tr:V('asmaTr'),
+    me:{hi:V('asmaMeHi'),en:V('asmaMeEn'),ur:V('asmaMeUr'),ar:ar,bn:V('asmaMeBn')}
+  };
+  if(origN && parseInt(origN)!==n){
+    await fbDEL('/app_asma/'+origN);
+  }
+  var r=await fbPUT('/app_asma/'+n, data);
+  if(r){
+    toast('✅ Naam saved!');
+    hideAsmaForm();
+    loadAsmaList();
+  }
+}
+
+
+// ═══════════════════════════════════
+// IMPORT APP DATA (from hardcoded index.html)
+// ═══════════════════════════════════
+
+const IMPORT_DHIKR=[
+  {id:'subhan',ar:'\u0633\u064f\u0628\u0652\u062d\u064e\u0627\u0646\u064e \u0627\u0644\u0644\u0651\u0670\u06c1',lo:{hi:'\u0938\u0941\u092c\u094d\u0939\u093e\u0928 \u0905\u0932\u094d\u0932\u093e\u0939',en:'SubhanAllah',ur:'\u0633\u0628\u062d\u0627\u0646 \u0627\u0644\u0644\u06c1',ar:'\u0633\u0628\u062d\u0627\u0646 \u0627\u0644\u0644\u0647',bn:'\u09b8\u09c1\u09ac\u09b9\u09be\u09a8\u0986\u09b2\u09cd\u09b2\u09be\u09b9'},me:{hi:'\u0905\u0932\u094d\u0932\u093e\u0939 \u092a\u093e\u0915 \u0939\u0948',en:'Glory be to Allah',ur:'\u0627\u0644\u0644\u06c1 \u067e\u0627\u06a9 \u06c1\u06d2'},icon:'\u2728',tgt:33,order:1},
+  {id:'alhamd',ar:'\u0627\u064e\u0644\u0652\u062d\u064e\u0645\u0652\u062f\u064f \u0644\u0650\u0644\u0651\u0670\u06c1',lo:{hi:'\u0905\u0932\u0939\u092e\u094d\u0926\u0941\u0932\u093f\u0932\u094d\u0932\u093e\u0939',en:'Alhamdulillah',ur:'\u0627\u0644\u062d\u0645\u062f\u0627\u0644\u0644\u06c1',ar:'\u0627\u0644\u062d\u0645\u062f \u0644\u0644\u0647',bn:'\u0986\u09b2\u09b9\u09be\u09ae\u09a6\u09c1\u09b2\u09bf\u09b2\u09cd\u09b2\u09be\u09b9'},me:{hi:'\u0938\u092c \u0924\u093e\u0930\u0940\u092b \u0905\u0932\u094d\u0932\u093e\u0939 \u0915\u094b',en:'All praise is for Allah',ur:'\u062a\u0645\u0627\u0645 \u062a\u0639\u0631\u06cc\u0641 \u0627\u0644\u0644\u06c1 \u06a9\u0648'},icon:'\ud83c\udf1f',tgt:33,order:2},
+  {id:'akbar',ar:'\u0627\u064e\u0644\u0644\u0651\u0670\u06c1\u064f \u0627\u064e\u06a9\u0652\u0628\u064e\u0631',lo:{hi:'\u0905\u0932\u094d\u0932\u093e\u0939\u0941 \u0905\u0915\u092c\u0930',en:'Allahu Akbar',ur:'\u0627\u0644\u0644\u06c1 \u0627\u06a9\u0628\u0631',ar:'\u0627\u0644\u0644\u0647 \u0623\u0643\u0628\u0631',bn:'\u0986\u09b2\u09cd\u09b2\u09be\u09b9\u09c1 \u0986\u0995\u09ac\u09be\u09b0'},me:{hi:'\u0905\u0932\u094d\u0932\u093e\u0939 \u0938\u092c\u0938\u0947 \u092c\u095c\u093e \u0939\u0948',en:'Allah is the Greatest',ur:'\u0627\u0644\u0644\u06c1 \u0633\u0628 \u0633\u06d2 \u0628\u0691\u0627'},icon:'\ud83c\udf19',tgt:33,order:3},
+  {id:'lailaha',ar:'\u0644\u064e\u0627 \u0625\u0650\u0644\u0670\u06c1\u064e \u0625\u0650\u0644\u064e\u0651\u0627 \u0627\u0644\u0644\u0651\u0670\u06c1',lo:{hi:'\u0932\u093e \u0907\u0932\u093e\u0939\u093e \u0907\u0932\u094d\u0932\u0932\u094d\u0932\u093e\u0939',en:'La ilaha illallah',ur:'\u0644\u0627 \u0627\u0644\u06c1 \u0627\u0644\u0627 \u0627\u0644\u0644\u06c1',ar:'\u0644\u0627 \u0625\u0644\u0647 \u0625\u0644\u0627 \u0627\u0644\u0644\u0647',bn:'\u09b2\u09be \u0987\u09b2\u09be\u09b9\u09be \u0987\u09b2\u09cd\u09b2\u09be\u09b2\u09cd\u09b2\u09be\u09b9'},me:{hi:'\u0905\u0932\u094d\u0932\u093e\u0939 \u0915\u0947 \u0938\u093f\u0935\u093e \u0915\u094b\u0908 \u092e\u093e\u092c\u0942\u0926 \u0928\u0939\u0940\u0902',en:'There is no god but Allah',ur:'\u0627\u0644\u0644\u06c1 \u06a9\u06d2 \u0633\u0648\u0627 \u06a9\u0648\u0626\u06cc \u0645\u0639\u0628\u0648\u062f \u0646\u06c1\u06cc\u06ba'},icon:'\u2600\ufe0f',tgt:100,order:4},
+  {id:'istgh',ar:'\u0627\u064e\u0633\u0652\u062a\u064e\u063a\u0652\u0641\u0650\u0631\u064f \u0627\u0644\u0644\u0651\u0670\u06c1',lo:{hi:'\u0905\u0938\u094d\u0924\u0917\u093c\u092b\u093f\u0930\u0941\u0932\u094d\u0932\u093e\u0939',en:'Astaghfirullah',ur:'\u0627\u0633\u062a\u063a\u0641\u0631\u0627\u0644\u0644\u06c1',ar:'\u0623\u0633\u062a\u063a\u0641\u0631 \u0627\u0644\u0644\u0647',bn:'\u0986\u09b8\u09cd\u09a4\u09be\u0997\u09ab\u09bf\u09b0\u09c1\u09b2\u09cd\u09b2\u09be\u09b9'},me:{hi:'\u0905\u0932\u094d\u0932\u093e\u0939 \u0938\u0947 \u092e\u093e\u092b\u0940 \u092e\u093e\u0901\u0917\u0924\u093e \u0939\u0942\u0901',en:'I seek forgiveness',ur:'\u0627\u0644\u0644\u06c1 \u0633\u06d2 \u0645\u0639\u0627\u0641\u06cc \u0645\u0627\u0646\u06af\u062a\u0627 \u06c1\u0648\u06ba'},icon:'\ud83e\udd32',tgt:100,order:5},
+  {id:'durood',ar:'\u0635\u064e\u0644\u064e\u0651\u0649 \u0627\u0644\u0644\u0651\u0670\u06c1\u064f \u0639\u064e\u0644\u064e\u064a\u0652\u06c1\u0650 \u0648\u064e\u0633\u064e\u0644\u064e\u0651\u0645\u064e',lo:{hi:'\u0926\u0930\u0942\u0926 \u0936\u0930\u0940\u092b',en:'Durood Shareef',ur:'\u062f\u0631\u0648\u062f \u0634\u0631\u06cc\u0641',ar:'\u0627\u0644\u0635\u0644\u0627\u0629 \u0639\u0644\u0649 \u0627\u0644\u0646\u0628\u064a',bn:'\u09a6\u09b0\u09c2\u09a6 \u09b6\u09b0\u09c0\u09ab'},me:{hi:'\u0928\u092c\u0940 \ufdfa \u092a\u0930 \u0930\u0939\u092e\u0924',en:'Blessings on Prophet \ufdfa',ur:'\u0646\u0628\u06cc \ufdfa \u067e\u0631 \u0631\u062d\u0645\u062a'},icon:'\ud83d\udc9a',tgt:100,order:6},
+  {id:'hawla',ar:'\u0644\u064e\u0627 \u062d\u064e\u0648\u0652\u0644\u064e \u0648\u064e\u0644\u064e\u0627 \u0642\u064f\u0648\u064e\u0651\u0629\u064e \u0625\u0650\u0644\u064e\u0651\u0627 \u0628\u0650\u0627\u0644\u0644\u0651\u0670\u06c1\u0650',lo:{hi:'\u0932\u093e \u0939\u094c\u0932 \u0935\u0932\u093e \u0915\u0942\u0935\u094d\u0935\u0924\u093e',en:'La Hawla Wala Quwwata',ur:'\u0644\u0627 \u062d\u0648\u0644 \u0648\u0644\u0627 \u0642\u0648\u06c3',ar:'\u0644\u0627 \u062d\u0648\u0644 \u0648\u0644\u0627 \u0642\u0648\u0629 \u0625\u0644\u0627 \u0628\u0627\u0644\u0644\u0647',bn:'\u09b2\u09be \u09b9\u09be\u0993\u09b2\u09be \u0993\u09af\u09bc\u09be\u09b2\u09be \u0995\u09c1\u0993\u09af\u09bc\u09be\u09a4\u09be'},me:{hi:'\u0924\u093e\u0915\u0924 \u0938\u093f\u0930\u094d\u092b \u0905\u0932\u094d\u0932\u093e\u0939 \u0938\u0947 \u0939\u0948',en:'No power except with Allah',ur:'\u0637\u0627\u0642\u062a \u0635\u0631\u0641 \u0627\u0644\u0644\u06c1 \u0633\u06d2'},icon:'\ud83d\udee1\ufe0f',tgt:99,order:7},
+  {id:'hasby',ar:'\u062d\u064e\u0633\u0652\u0628\u0650\u064a\u064e \u0627\u0644\u0644\u0651\u0670\u06c1\u064f \u0644\u064e\u0627 \u0625\u0650\u0644\u0670\u06c1\u064e \u0625\u0650\u0644\u064e\u0651\u0627 \u0647\u064f\u0648\u064e',lo:{hi:'\u0939\u0938\u094d\u092c\u093f\u092f\u0932\u094d\u0932\u093e\u0939',en:'Hasbiyallah',ur:'\u062d\u0633\u0628\u06cc \u0627\u0644\u0644\u06c1',ar:'\u062d\u0633\u0628\u064a \u0627\u0644\u0644\u0647',bn:'\u09b9\u09be\u09b8\u09ac\u09bf\u09af\u09bc\u09be\u09b2\u09cd\u09b2\u09be\u09b9'},me:{hi:'\u092e\u0947\u0930\u0947 \u0932\u093f\u090f \u0905\u0932\u094d\u0932\u093e\u0939 \u0915\u093e\u092b\u0940 \u0939\u0948',en:'Allah is sufficient for me',ur:'\u0627\u0644\u0644\u06c1 \u0645\u06cc\u0631\u06d2 \u0644\u06cc\u06d2 \u06a9\u0627\u0641\u06cc'},icon:'\u2b50',tgt:7,order:8},
+  {id:'tahmid',ar:'\u0633\u064f\u0628\u0652\u062d\u064e\u0627\u0646\u064e \u0627\u0644\u0644\u0651\u0670\u06c1\u0650 \u0648\u064e\u0628\u0650\u062d\u064e\u0645\u0652\u062f\u0650\u06c1\u0650\u06d6',lo:{hi:'\u0938\u0941\u092c\u094d\u0939\u093e\u0928\u0932\u094d\u0932\u093e\u0939\u093f \u0935\u092c\u093f\u0939\u092e\u094d\u0926\u093f\u0939\u0940',en:'SubhanAllahi wa Bihamdihi',ur:'\u0633\u0628\u062d\u0627\u0646 \u0627\u0644\u0644\u06c1 \u0648 \u0628\u062d\u0645\u062f\u06c1',ar:'\u0633\u0628\u062d\u0627\u0646 \u0627\u0644\u0644\u0647 \u0648\u0628\u062d\u0645\u062f\u0647',bn:'\u09b8\u09c1\u09ac\u09b9\u09be\u09a8\u09be\u09b2\u09cd\u09b2\u09be\u09b9\u09bf \u0993\u09af\u09bc\u09be \u09ac\u09bf\u09b9\u09be\u09ae\u09a6\u09bf\u09b9\u09bf'},me:{hi:'\u0905\u0932\u094d\u0932\u093e\u0939 \u092a\u093e\u0915 \u0914\u0930 \u0909\u0938\u0940 \u0915\u0940 \u0924\u093e\u0930\u0940\u092b',en:'Glory and Praise be to Allah',ur:'\u0627\u0644\u0644\u06c1 \u067e\u0627\u06a9 \u0627\u0648\u0631 \u0627\u0633\u06cc \u06a9\u06cc \u062a\u0639\u0631\u06cc\u0641'},icon:'\ud83c\udf38',tgt:100,order:9},
+  {id:'azeem',ar:'\u0633\u064f\u0628\u0652\u062d\u064e\u0627\u0646\u064e \u0627\u0644\u0644\u0651\u0670\u06c1\u0650 \u0627\u0644\u0652\u0639\u064e\u0638\u0650\u064a\u0652\u0645',lo:{hi:'\u0938\u0941\u092c\u094d\u0939\u093e\u0928\u0932\u094d\u0932\u093e\u0939\u093f\u0932 \u0905\u095b\u0940\u092e',en:'SubhanAllahil Azim',ur:'\u0633\u0628\u062d\u0627\u0646 \u0627\u0644\u0644\u06c1 \u0627\u0644\u0639\u0638\u06cc\u0645',ar:'\u0633\u0628\u062d\u0627\u0646 \u0627\u0644\u0644\u0647 \u0627\u0644\u0639\u0638\u064a\u0645',bn:'\u09b8\u09c1\u09ac\u09b9\u09be\u09a8\u09be\u09b2\u09cd\u09b2\u09be\u09b9\u09bf\u09b2 \u0986\u099c\u09bf\u09ae'},me:{hi:'\u0905\u095b\u0940\u092e \u0905\u0932\u094d\u0932\u093e\u0939 \u0915\u0940 \u092a\u0935\u093f\u0924\u094d\u0930\u0924\u093e',en:'Glory to Allah the Magnificent',ur:'\u0639\u0638\u06cc\u0645 \u0627\u0644\u0644\u06c1 \u06a9\u06cc \u067e\u0627\u06a9\u06cc\u0632\u06af\u06cc'},icon:'\ud83c\udf20',tgt:100,order:10},
+  {id:'kalimat',ar:'\u0644\u064e\u0627 \u0625\u0650\u0644\u0670\u06c1\u064e \u0625\u0650\u0644\u064e\u0651\u0627 \u0627\u0644\u0644\u0651\u0670\u06c1\u064f \u0648\u064e\u062d\u0652\u062f\u064e\u06c1\u064f\u0657 \u0644\u064e\u0627 \u0634\u064e\u0631\u0650\u064a\u0652\u0643\u064e \u0644\u064e\u06c1\u064f\u0657',lo:{hi:'\u0935\u0939\u0926\u0939\u0942 \u0932\u093e \u0936\u0930\u0940\u0915\u093e \u0932\u0939\u0942',en:'Wahdahu La Sharika Lah',ur:'\u0648\u062d\u062f\u06c1 \u0644\u0627 \u0634\u0631\u06cc\u06a9',ar:'\u0648\u062d\u062f\u0647 \u0644\u0627 \u0634\u0631\u064a\u0643 \u0644\u0647',bn:'\u0993\u09af\u09bc\u09be\u09b9\u09a6\u09be\u09b9\u09c1 \u09b2\u09be \u09b6\u09b0\u09c0\u0995\u09be \u09b2\u09be\u09b9\u09c1'},me:{hi:'\u0935\u0939 \u0905\u0915\u0947\u0932\u093e, \u0915\u094b\u0908 \u0936\u0930\u0940\u0915 \u0928\u0939\u0940\u0902',en:'He alone, no partner for Him',ur:'\u0648\u06c1 \u0627\u06a9\u06cc\u0644\u0627\u060c \u06a9\u0648\u0626\u06cc \u0634\u0631\u06cc\u06a9 \u0646\u06c1\u06cc\u06ba'},icon:'\ud83d\udd06',tgt:100,order:11},
+  {id:'salawat',ar:'\u0627\u064e\u0644\u0644\u0651\u0670\u06c1\u064f\u0645\u064e\u0651 \u0635\u064e\u0644\u0650\u0651 \u0639\u064e\u0644\u0670\u0649 \u0645\u064f\u062d\u064e\u0645\u064e\u0651\u062f\u064d',lo:{hi:'\u0905\u0932\u094d\u0932\u093e\u0939\u0941\u092e\u094d\u092e\u093e \u0938\u0932\u094d\u0932\u093f',en:'Allahumma Salli ala Muhammad',ur:'\u0627\u0644\u0644\u06c1\u0645 \u0635\u0644 \u0639\u0644\u06cc \u0645\u062d\u0645\u062f',ar:'\u0627\u0644\u0644\u0647\u0645 \u0635\u0644 \u0639\u0644\u0649 \u0645\u062d\u0645\u062f',bn:'\u0986\u09b2\u09cd\u09b2\u09be\u09b9\u09c1\u09ae\u09cd\u09ae\u09be \u09b8\u09be\u09b2\u09cd\u09b2\u09bf \u0986\u09b2\u09be \u09ae\u09c1\u09b9\u09be\u09ae\u09cd\u09ae\u09a6'},me:{hi:'\u0928\u092c\u0940 \ufdfa \u092a\u0930 \u0905\u0932\u094d\u0932\u093e\u0939 \u0915\u0940 \u0930\u0939\u092e\u0924',en:'O Allah! Bless Muhammad \ufdfa',ur:'\u0627\u06d2 \u0627\u0644\u0644\u06c1 \u0645\u062d\u0645\u062f \ufdfa \u067e\u0631 \u0631\u062d\u0645\u062a'},icon:'\ud83d\udc9b',tgt:100,order:12},
+  {id:'basmala',ar:'\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u0670\u06c1\u0650 \u0627\u0644\u0631\u064e\u0651\u062d\u0652\u0645\u0670\u0646\u0650 \u0627\u0644\u0631\u064e\u0651\u062d\u0650\u064a\u0652\u0645',lo:{hi:'\u092c\u093f\u0938\u094d\u092e\u093f\u0932\u094d\u0932\u093e\u0939',en:'Bismillah',ur:'\u0628\u0633\u0645 \u0627\u0644\u0644\u06c1',ar:'\u0628\u0633\u0645 \u0627\u0644\u0644\u0647 \u0627\u0644\u0631\u062d\u0645\u0646 \u0627\u0644\u0631\u062d\u064a\u0645',bn:'\u09ac\u09bf\u09b8\u09ae\u09bf\u09b2\u09cd\u09b2\u09be\u09b9'},me:{hi:'\u0905\u0932\u094d\u0932\u093e\u0939 \u0915\u0947 \u0928\u093e\u092e \u0938\u0947 \u0936\u0941\u0930\u0942',en:'In the name of Allah',ur:'\u0627\u0644\u0644\u06c1 \u06a9\u06d2 \u0646\u0627\u0645 \u0633\u06d2'},icon:'\ud83d\udcd6',tgt:99,order:13}
+];
+
+const IMPORT_GUIDE = [{
+    id:'g1',
+    ar:'سُبْحَانَ اللّٰہِ وَبِحَمْدِهٖ سُبْحَانَ اللّٰہِ الْعَظِيْم',
+    lo:{hi:'सुब्हानल्लाहि वबिहम्दिही, सुब्हानल्लाहिल अज़ीम',en:'SubhanAllahi wa Bihamdihi, SubhanAllahil Azim',ur:'سبحان اللہ و بحمدہ، سبحان اللہ العظیم',ar:'سبحان الله وبحمده، سبحان الله العظيم',bn:'সুবহানাল্লাহি ওয়া বিহামদিহি, সুবহানাল্লাহিল আজিম'},
+    me:{hi:'अल्लाह पाक है अपनी तारीफ के साथ, वह सबसे अज़ीम है',en:'Glory and Praise be to Allah — He is the Most Magnificent',ur:'اللہ پاک ہے اپنی تعریف کے ساتھ، وہ عظیم ہے',ar:'سبحانه وبحمده، وهو العظيم',bn:'আল্লাহ পবিত্র ও প্রশংসিত, তিনি মহান'},
+    cnt:'100×',
+    ben:{hi:'100 গুनाह माफ होते हैं, 100 नेकियाँ आमलनामे में लिखी जाती हैं',en:'100 sins forgiven, 100 good deeds written in the record',ur:'100 گناہ معاف ہوتے ہیں، 100 نیکیاں آمال نامے میں درج ہوتی ہیں',ar:'تُمحى مائة خطيئة وتُكتب مائة حسنة في الصحيفة',bn:'১০০ গুনাহ মাফ হয়, আমলনামায় ১০০ নেকি লেখা হয়'},
+    ref:'Sahih Muslim 2691',did:'tahmid'
+  },
+  {
+    id:'g2',
+    ar:'سُبْحَانَ اللّٰہِ الْعَظِيْم',
+    lo:{hi:'सुब्हानल्लाहिल अज़ीम',en:'SubhanAllahil Azim',ur:'سبحان اللہ العظیم',ar:'سبحان الله العظيم',bn:'সুবহানাল্লাহিল আজিম'},
+    me:{hi:'अज़ीम (महान) अल्लाह की पवित्रता बयान करना',en:'Declaring the glory of Allah the Most Magnificent',ur:'عظیم اللہ کی پاکیزگی بیان کرنا',ar:'تنزيه الله العظيم عن كل نقص',bn:'মহান আল্লাহর পবিত্রতা ঘোষণা করা'},
+    cnt:'∞',
+    ben:{hi:'ज़बान पर हल्की, मीज़ान में बहुत भारी, रहमान को अत्यंत पसंदीदा',en:'Light on the tongue, heavy on the Scale of Deeds, most beloved to the Most Merciful',ur:'زبان پر ہلکی، میزان میں بہت بھاری، رحمٰن کو انتہائی پسندیدہ',ar:'خفيفة على اللسان، ثقيلة في الميزان، حبيبة إلى الرحمن',bn:'মুখে হালকা, আমলের পাল্লায় অনেক ভারী, রহমানের কাছে সবচেয়ে প্রিয়'},
+    ref:'Sahih Bukhari 6682',did:'azeem'
+  },
+  {
+    id:'g3',
+    ar:'لَا إِلٰهَ إِلَّا اللّٰہُ وَحْدَهٗ لَا شَرِيْكَ لَهٗ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلٰى كُلِّ شَيْءٍ قَدِيْر',
+    lo:{hi:'ला इलाहा इल्लल्लाहु वहदहू ला शरीका लहू, लहुल मुल्कु वलहुल हम्दु, वहुवा अला कुल्लि शैइन कदीर',en:'La ilaha illAllahu wahdahu la sharika lahu, lahul mulku walahul hamdu, wahuwa ala kulli shain Qadir',ur:'لا الہ الا اللہ وحدہ لا شریک لہ، لہ الملک ولہ الحمد، وہو علی کل شیء قدیر',ar:'لا إله إلا الله وحده لا شريك له، له الملك وله الحمد، وهو على كل شيء قدير',bn:'লা ইলাহা ইল্লাল্লাহু ওয়াহদাহু লা শারীকা লাহু, লাহুল মুলকু ওয়ালাহুল হামদু, ওয়াহুয়া আলা কুল্লি শাইন কাদির'},
+    me:{hi:'अल्लाह के सिवा कोई माबूद नहीं, वह अकेला है, उसका कोई शरीक नहीं, उसी की बादशाहत और तारीफ है, वह हर चीज़ पर क़ादिर है',en:'None worthy of worship except Allah alone, no partner — His is the dominion and praise, and He has power over all things',ur:'اللہ کے سوا کوئی معبود نہیں، وہ اکیلا ہے بغیر شریک، اسی کی بادشاہت اور تعریف ہے، وہ ہر چیز پر قادر ہے',ar:'لا معبود بحق إلا الله وحده لا شريك له، له السلطان وله الحمد، وهو على كل شيء قدير',bn:'আল্লাহ ছাড়া কোনো সত্য উপাস্য নেই, তিনি একা শরিকবিহীন, রাজত্ব ও প্রশংসা তাঁরই, তিনি সর্বশক্তিমান'},
+    cnt:'100× daily',
+    ben:{hi:'10 গুলाम आज़ाद करने का सवाब, 100 नेकी, 100 गुनाह माफ, शैतान से पूरे दिन हिफाज़त',en:'Reward equal to freeing 10 slaves, 100 good deeds, 100 sins erased, protection from Shaytan all day',ur:'10 غلام آزاد کرنے کا ثواب، 100 نیکیاں، 100 گناہ معاف، سارا دن شیطان سے حفاظت',ar:'ثواب عتق عشر رقاب، مائة حسنة، محو مائة خطيئة، حصن من الشيطان طوال اليوم',bn:'১০ দাস মুক্তির সমান সওয়াব, ১০০ নেকি, ১০০ গুনাহ মাফ, সারাদিন শয়তান থেকে সুরক্ষা'},
+    ref:'Sahih Bukhari 3293 | Sahih Muslim 2691',did:'kalimat'
+  },
+  {
+    id:'g4',
+    ar:'تَسْبِيحُ فَاطِمَة: سُبْحَانَ اللّٰہ (٣٣) + اَلْحَمْدُ لِلّٰہ (٣٣) + اَللّٰہُ اَکْبَر (٣٤)',
+    lo:{hi:'तसबीह-ए-फातिमा — सुब्हानल्लाह 33 + अलहम्दुलिल्लाह 33 + अल्लाहु अकबर 34',en:'Tasbeeh-e-Fatima — SubhanAllah 33 + Alhamdulillah 33 + Allahu Akbar 34',ur:'تسبیح فاطمہ — سبحان اللہ 33 + الحمداللہ 33 + اللہ اکبر 34',ar:'تسبيح فاطمة — سبحان الله ٣٣ + الحمد لله ٣٣ + الله أكبر ٣٤',bn:'তাসবীহ ফাতেমা — সুবহানআল্লাহ ৩৩ + আলহামদুলিল্লাহ ৩৩ + আল্লাহু আকবার ৩৪'},
+    me:{hi:'हर नमाज़ के बाद पढ़ी जाने वाली मशहूर तसबीह — कुल 100',en:'Famous Tasbeeh after every Salah — total 100 count',ur:'ہر نماز کے بعد پڑھی جانے والی مشہور تسبیح — کل 100',ar:'التسبيح المشهور بعد كل صلاة — المجموع 100',bn:'প্রতি নামাজের পর পাঠ্য বিখ্যাত তাসবীহ — মোট ১০০'},
+    cnt:'33+33+34',
+    ben:{hi:'সারা দিনের থকান দূर होती है — नबी ﷺ ने হज़रत फातिमा ؓ को ख़ादिम की जगह यह तसबीह सिखाई',en:'Removes fatigue of the day — Prophet ﷺ taught Fatima ؓ this instead of giving her a servant',ur:'سارا دن کی تھکاوٹ دور ہوتی ہے — نبی ﷺ نے حضرت فاطمہؓ کو خادم کی جگہ یہ تسبیح تعلیم دی',ar:'تزيل تعب اليوم — النبي ﷺ علّمها لفاطمة بدلاً من منحها خادماً',bn:'সারাদিনের ক্লান্তি দূর হয় — নবী ﷺ ফাতিমাকে ؓ খাদেমের বদলে এই তাসবীহ শিখিয়েছিলেন'},
+    ref:'Sahih Bukhari 3113',did:'subhan'
+  },
+  {
+    id:'g5',
+    ar:'اَللّٰہُمَّ اِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّيْ',
+    lo:{hi:'अल्लाहुम्मा इन्नका अफुव्वुन तुहिब्बुल अफ्व फअफु अन्नी',en:'Allahumma innaka Afuwwun tuhibbul afwa fa\'fu anni',ur:'اللہم انک عفو تحب العفو فاعف عنی',ar:'اللهم إنك عفو تحب العفو فاعف عني',bn:'আল্লাহুম্মা ইন্নাকা আফুওয়ুন তুহিব্বুল আফওয়া ফাফু আন্নী'},
+    me:{hi:'ऐ अल्लाह! बेशक तू माफ करने वाला है, तू माफ करना पसंद करता है, तो मुझे माफ कर दे',en:'O Allah! Surely You are Most Forgiving, You love forgiveness, so forgive me',ur:'اے اللہ! بے شک تو معاف کرنے والا ہے، تجھے معافی پسند ہے، پس مجھے معاف فرما',ar:'اللهم إنك عفو كريم تحب العفو فاعف عنا',bn:'হে আল্লাহ তুমি নিশ্চয়ই ক্ষমাশীল, তুমি ক্ষমা ভালোবাসো, তাই আমাকে ক্ষমা করো'},
+    cnt:'Laylatul Qadr',
+    ben:{hi:'नबी ﷺ ने हज़रत आइशा ؓ को यह दुआ लैलतुल क़द्र में पढ़ने के लिए बताई — यह सबसे अफ़ज़ल दुआ है',en:'Prophet ﷺ taught this dua to Aisha ؓ specifically for Laylatul Qadr — the best dua for that night',ur:'نبی ﷺ نے حضرت عائشہؓ کو یہ دعا خاص طور پر لیلۃ القدر کے لیے بتائی — یہ اس رات کی افضل دعا ہے',ar:'النبي ﷺ علّمها لعائشة خصيصاً لليلة القدر — هي أفضل دعاء تلك الليلة',bn:'নবী ﷺ আয়েশাকে ؓ বিশেষভাবে লাইলাতুল কদরের জন্য এই দুআ শিখিয়েছিলেন'},
+    ref:'Tirmidhi 3513 (Hasan Sahih)',did:'qadr'
+  },
+  {
+    id:'g6',
+    ar:'اَللّٰہُمَّ صَلِّ عَلٰى مُحَمَّدٍ وَّعَلٰى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلٰى اِبْرَاهِيْمَ وَعَلٰى آلِ اِبْرَاهِيْمَ، اِنَّكَ حَمِيْدٌ مَجِيْد',
+    lo:{hi:'अल्लाहुम्मा सल्लि अला मुहम्मदिन वअला आलि मुहम्मद, कमा सल्लैता अला इब्राहीम वअला आलि इब्राहीम, इन्नका हमीदुम मजीद',en:'Allahumma salli ala Muhammadin wa ala ali Muhammad, kama sallaita ala Ibrahima wa ala ali Ibrahim, innaka Hameedun Majid',ur:'اللہم صل علی محمد وعلی آل محمد، کما صلیت علی ابراہیم وعلی آل ابراہیم، انک حمید مجید',ar:'اللهم صل على محمد وعلى آل محمد، كما صليت على إبراهيم وعلى آل إبراهيم، إنك حميد مجيد',bn:'আল্লাহুম্মা সাল্লি আলা মুহাম্মাদিন ওয়া আলা আলি মুহাম্মাদ, কামা সাল্লাইতা আলা ইব্রাহীমা ওয়া আলা আলি ইব্রাহীম, ইন্নাকা হামীদুম মাজীদ'},
+    me:{hi:'ऐ अल्लाह! मुहम्मद ﷺ और उनकी आल पर वैसी रहमत भेज जैसी इब्राहीम और उनकी आल पर भेजी — तू सज़ावारे तारीफ और बड़ी शान वाला है',en:'O Allah, send blessings on Muhammad ﷺ and his family as You sent blessings on Ibrahim and his family — You are Praiseworthy, Glorious',ur:'اے اللہ! محمد ﷺ اور ان کی آل پر ویسی رحمت بھیج جیسی ابراہیم اور ان کی آل پر بھیجی',ar:'اللهم صل على نبينا محمد وآله كما صليت على إبراهيم وآله، إنك حميد مجيد',bn:'হে আল্লাহ মুহাম্মদ ﷺ ও তাঁর পরিবারে সেইরূপ রহমত পাঠাও যেভাবে ইব্রাহিম ও তাঁর পরিবারে পাঠিয়েছিলে'},
+    cnt:'As much as possible',
+    ben:{hi:'1 बार दरूद पढ़ने पर अल्लाह 10 रहमतें भेजता है, 10 दर्जे बुलंद होते हैं, 10 गुनाह माफ होते हैं',en:'1 Durood = Allah sends 10 blessings, 10 ranks elevated, 10 sins forgiven',ur:'1 درود = اللہ 10 رحمتیں، 10 درجے بلند، 10 گناہ معاف',ar:'صلاة واحدة: 10 صلوات من الله + 10 درجات + محو 10 خطايا',bn:'১ বার দরূদ = আল্লাহর ১০ রহমত + ১০ মর্যাদা বৃদ্ধি + ১০ গুনাহ মাফ'},
+    ref:'Sahih Muslim 408',did:'durood'
+  },
+  {
+    id:'g7',
+    ar:'لَا إِلٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّيْ كُنْتُ مِنَ الظَّالِمِيْن',
+    lo:{hi:'ला इलाहा इल्ला अन्त सुब्हानका इन्नी कुन्तु मिनज़्ज़ालिमीन',en:'La ilaha illa Anta SubhanAka inni kuntu minaz-zalimin',ur:'لا الہ الا انت سبحانک انی کنت من الظالمین',ar:'لا إله إلا أنت سبحانك إني كنت من الظالمين',bn:'লা ইলাহা ইল্লা আন্তা সুবহানাকা ইন্নী কুন্তু মিনাজ জালিমীন'},
+    me:{hi:'तेरे सिवा कोई माबूद नहीं, तू पाक है, बेशक मैं ज़ालिमों में था',en:'There is no deity except You; Glory be to You. Indeed I have been of the wrongdoers',ur:'تیرے سوا کوئی معبود نہیں، تو پاک ہے، بے شک میں ظالموں میں سے تھا',ar:'لا معبود إلا أنت، تنزيهاً لك، إني كنت من الظالمين',bn:'তুমি ছাড়া কোনো উপাস্য নেই, তুমি পবিত্র, নিশ্চয়ই আমি অত্যাচারীদের মধ্যে ছিলাম'},
+    cnt:'Unlimited',
+    ben:{hi:'हज़रत यूनुस ﷺ ने मछली के पेट में यह दुआ पढ़ी — जो मुसलमान किसी भी मुसीबत में यह दुआ पढ़े, अल्लाह उसकी मुसीबत दूर करेगा',en:'Prophet Yunus ﷺ recited this inside the whale — any Muslim who recites this in distress, Allah will relieve their difficulty',ur:'حضرت یونس ﷺ نے مچھلی کے پیٹ میں یہ دعا پڑھی — جو مسلمان مصیبت میں یہ پڑھے اللہ اس کی مصیبت دور کرتا ہے',ar:'دعاء يونس في بطن الحوت — ما دعا بها مسلم في كرب إلا فرّج الله كربته',bn:'ইউনুস ﷺ মাছের পেটে এই দুআ পড়েছিলেন — কোনো মুসলিম মুশকিলে এটি পড়লে আল্লাহ তার সংকট দূর করেন'},
+    ref:'Tirmidhi 3505 (Sahih)',did:'yunus'
+  },
+  {
+    id:'g8',
+    ar:'حَسْبِيَ اللّٰہُ لَا إِلٰهَ إِلَّا هُوَ عَلَيْہِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيْم',
+    lo:{hi:'हस्बियल्लाहु ला इलाहा इल्ला हुवा, अलैहि तवक्कलतु, वहुवा रब्बुल अर्शिल अज़ीम',en:'Hasbiyallahu la ilaha illa Huwa, alayhi tawakkaltu, wahuwa Rabb ul-Arsh il-Azim',ur:'حسبی اللہ لا الہ الا ہو، علیہ توکلت، وہو رب العرش العظیم',ar:'حسبي الله لا إله إلا هو، عليه توكلت، وهو رب العرش العظيم',bn:'হাসবিয়াল্লাহু লা ইলাহা ইল্লা হুওয়া, আলাইহি তাওয়াক্কালতু, ওয়াহুওয়া রাব্বুল আরশিল আজিম'},
+    me:{hi:'मेरे लिए अल्लाह काफी है, उसके सिवा कोई माबूद नहीं, उसी पर मैंने भरोसा किया, वह अर्श-ए-अज़ीम का रब है',en:'Allah is sufficient for me, none worthy of worship except He, in Him I put my trust, He is the Lord of the Mighty Throne',ur:'میرے لیے اللہ کافی ہے، اس کے سوا کوئی معبود نہیں، اسی پر بھروسہ کیا، وہ عرشِ عظیم کا رب ہے',ar:'الله يكفيني، لا معبود سواه، عليه اعتمدت، وهو رب العرش العظيم',bn:'আমার জন্য আল্লাহই যথেষ্ট, তিনি ছাড়া কোনো উপাস্য নেই, তাঁর উপর ভরসা রাখি, তিনি মহান আরশের রব'},
+    cnt:'7× morning & evening',
+    ben:{hi:'सुबह-शाम 7 बार पढ़ने से अल्लाह दुनिया और आखिरत की जो भी चिंता हो सब काफी हो जाएगा',en:'Whoever recites 7 times morning and evening — Allah will suffice him in all worldly and religious concerns',ur:'جو صبح و شام 7 بار پڑھے — اللہ اس کی دنیا اور آخرت کی تمام فکروں کے لیے کافی ہو جاتا ہے',ar:'من قالها سبعاً صباحاً ومساءً كفاه الله ما أهمه من أمر دنياه وآخرته',bn:'সকাল-সন্ধ্যা ৭ বার পড়লে আল্লাহ দুনিয়া ও আখিরাতের সব চিন্তার জন্য যথেষ্ট হয়ে যাবেন'},
+    ref:'Abu Dawud 5081',did:'hasby'
+  },
+  {
+    id:'g9',
+    ar:'سُبْحَانَ اللّٰہِ وَبِحَمْدِهٖ عَدَدَ خَلْقِهٖ وَرِضَاءَ نَفْسِهٖ وَزِنَةَ عَرْشِهٖ وَمِدَادَ كَلِمَاتِهٖ',
+    lo:{hi:'सुब्हानल्लाहि वबिहम्दिही, अददा खल्किही, वरिज़ा नफ्सिही, वज़िनता अर्शिही, वमिदाद कलिमातिही',en:'SubhanAllahi wa bihamdihi, adada khalqihi, wa ridaa nafsihi, wa zinata arshihi, wa midada kalimatihi',ur:'سبحان اللہ و بحمدہ، عدد خلقہ، ورضاء نفسہ، وزنۃ عرشہ، ومداد کلماتہ',ar:'سبحان الله وبحمده، عدد خلقه، ورضاء نفسه، وزنة عرشه، ومداد كلماته',bn:'সুবহানাল্লাহি ওয়া বিহামদিহি, আদাদা খালকিহি, ওয়া রিদাআ নাফসিহি, ওয়া জিনাতা আরশিহি, ওয়া মিদাদা কালিমাতিহি'},
+    me:{hi:'अल्लाह की तसबीह और तारीफ — उसकी मख्लूक की गिनती जितनी, उसकी रज़ामंदी जितनी, उसके अर्श के वज़न जितनी और उसके कलिमात की स्याही जितनी',en:'Glory and Praise to Allah — to the number of His creation, to His pleasure, the weight of His Throne, and the ink of His words',ur:'اللہ کی تسبیح و تعریف — اس کی مخلوق کی تعداد، اس کی رضا، عرش کے وزن اور کلمات کی سیاہی جتنی',ar:'تسبيح الله وتحميده بعدد مخلوقاته ورضاه وزنة عرشه ومداد كلماته',bn:'আল্লাহর পবিত্রতা ও প্রশংসা — তাঁর সৃষ্টির সংখ্যায়, সন্তুষ্টিতে, আরশের ভারে ও তাঁর কালেমার কালিতে'},
+    cnt:'3× morning',
+    ben:{hi:'সকाल में 3 बार पढ़ना बाकी सारी तसबीह से बेहतर है — हज़रत जुवैरिया ؓ की हदीस',en:'3 times in morning outweighs all other dhikr done after that — narrated from Juwayriya ؓ',ur:'صبح 3 بار پڑھنا باقی تمام تسبیحوں سے بہتر ہے — حضرت جویریہؓ کی حدیث',ar:'قراءتها ثلاثاً صباحاً تعدل ما سواها من ذكر — حديث جويرية',bn:'সকালে ৩ বার পড়া বাকি সব জিকরের চেয়ে উত্তম — জুওয়াইরিয়া ؓ থেকে বর্ণিত'},
+    ref:'Sahih Muslim 2726',did:'tahmid'
+  },
+  {
+    id:'g10',
+    ar:'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّار',
+    lo:{hi:'रब्बना आतिना फिद्दुनिया हसना, वफिल आखिरति हसना, वकिना अज़ाबन्नार',en:'Rabbana atina fid-dunya hasanatan, wa fil akhirati hasanatan, wa qina azabannar',ur:'ربنا آتنا فی الدنیا حسنۃ، وفی الآخرۃ حسنۃ، وقنا عذاب النار',ar:'ربنا آتنا في الدنيا حسنة وفي الآخرة حسنة وقنا عذاب النار',bn:'রাব্বানা আতিনা ফিদ্দুনিয়া হাসানাতান ওয়া ফিল আখিরাতি হাসানাতান ওয়া কিনা আজাবান্নার'},
+    me:{hi:'ऐ हमारे रब! हमें दुनिया में भी भलाई दे और आखिरत में भी भलाई दे और हमें दोज़ख के अज़ाब से बचा',en:'Our Lord! Give us good in this world and good in the Hereafter and save us from the punishment of Fire',ur:'اے ہمارے رب! دنیا میں بھلائی دے، آخرت میں بھلائی دے اور جہنم کے عذاب سے بچا',ar:'اللهم هب لنا خيري الدنيا والآخرة وأجرنا من عذاب النار',bn:'হে আমাদের রব দুনিয়ায় ভালো দাও, আখিরাতেও ভালো দাও এবং জাহান্নামের আজাব থেকে রক্ষা করো'},
+    cnt:'After every Salah',
+    ben:{hi:'यह सबसे ज़्यादा पढ़ी जाने वाली क़ुरआनी दुआ है — नबी ﷺ इसे बहुत ज़्यादा पढ़ते थे',en:'Most frequently recited Quranic dua — Prophet ﷺ used to recite this abundantly',ur:'یہ قرآن کی سب سے زیادہ پڑھی جانے والی دعا ہے — نبی ﷺ اسے بہت زیادہ پڑھتے تھے',ar:'أكثر دعاء في القرآن ترديداً — كان النبي ﷺ يكثر من قراءتها',bn:'কুরআনে সবচেয়ে বেশি পঠিত দুআ — নবী ﷺ এটি প্রচুর পরিমাণে পড়তেন'},
+    ref:'Quran 2:201 | Sahih Bukhari 4522',did:'fatiha'
+  },
+  {
+    id:'g11',
+    ar:'اَللّٰہُمَّ اَعِنِّيْ عَلٰى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ',
+    lo:{hi:'अल्लाहुम्मा आइन्नी अला ज़िक्रिका वशुक्रिका वहुस्नि इबादतिका',en:'Allahumma a\'inni ala dhikrika wa shukrika wa husni ibadatik',ur:'اللہم اعنی علی ذکرک وشکرک وحسن عبادتک',ar:'اللهم أعني على ذكرك وشكرك وحسن عبادتك',bn:'আল্লাহুম্মা আইন্নী আলা জিকরিকা ওয়া শুকরিকা ওয়া হুসনি ইবাদাতিক'},
+    me:{hi:'ऐ अल्लाह! मेरी मदद कर अपना ज़िक्र करने में, अपना शुक्र करने में और अच्छी इबादत करने में',en:'O Allah! Help me to remember You, to be grateful to You, and to worship You in the best manner',ur:'اے اللہ! اپنا ذکر، شکر اور بہترین عبادت پر میری مدد فرما',ar:'اللهم أعنا على ذكرك وشكرك وحسن عبادتك',bn:'হে আল্লাহ তোমার জিকর, শুকর ও উত্তম ইবাদতে আমাকে সাহায্য করো'},
+    cnt:'After every Salah',
+    ben:{hi:'नबी ﷺ ने मुआज़ बिन जबल ؓ को यह दुआ हर नमाज़ के बाद पढ़ने की वसीयत की',en:'Prophet ﷺ advised Muadh ibn Jabal ؓ to recite this after every Salah',ur:'نبی ﷺ نے حضرت معاذ بن جبلؓ کو ہر نماز کے بعد یہ دعا پڑھنے کی وصیت کی',ar:'أوصى النبي ﷺ معاذ بن جبل بقراءتها دبر كل صلاة',bn:'নবী ﷺ মুআজ বিন জাবালকে ؓ প্রতি নামাজের পর এই দুআ পড়তে উপদেশ দিয়েছিলেন'},
+    ref:'Abu Dawud 1522 (Sahih)',did:'istgh'
+  },
+  {
+    id:'g12',
+    ar:'اَسْتَغْفِرُ اللّٰہَ الَّذِيْ لَا إِلٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّوْمُ وَأَتُوْبُ إِلَيْه',
+    lo:{hi:'अस्तग़फिरुल्लाहल लज़ी ला इलाहा इल्ला हुवल हय्युल कय्यूमु वातूबु इलैह',en:'Astaghfirullaha-l-ladhi la ilaha illa Huwal-Hayyul-Qayyumu wa atubu ilayh',ur:'استغفر اللہ الذی لا الہ الا ہو الحی القیوم وأتوب الیہ',ar:'أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه',bn:'আস্তাগফিরুল্লাহাল লাজি লা ইলাহা ইল্লা হুওয়াল হাইয়্যুল কাইয়্যুমু ওয়া আতুবু ইলাইহ'},
+    me:{hi:'मैं उस अल्लाह से माफी माँगता हूँ जिसके सिवा कोई माबूद नहीं, जो हमेशा ज़िंदा और कायम है, और उसी की तरफ तौबा करता हूँ',en:'I seek forgiveness from Allah, besides Whom none has the right to be worshipped, the Ever-Living, the Sustainer, and I turn to Him in repentance',ur:'اس اللہ سے معافی مانگتا ہوں جس کے سوا کوئی معبود نہیں، جو ہمیشہ زندہ اور قائم ہے',ar:'أستغفر الله الذي لا إله إلا هو، الحي القيوم، وأتوب إليه',bn:'সেই আল্লাহর কাছে মাফ চাই যিনি ছাড়া কোনো উপাস্য নেই, যিনি চিরঞ্জীব চিরপ্রতিষ্ঠিত, এবং তাঁর দিকে তওবা করি'},
+    cnt:'3× after Fajr & Asr',
+    ben:{hi:'जो यह 3 बार पढ़े उसके गुनाह माफ कर दिए जाते हैं, चाहे वे समुद्र की झाग जितने हों',en:'Whoever says this 3 times, his sins will be forgiven even if they are like the foam of the sea',ur:'جو 3 بار پڑھے اس کے گناہ معاف ہوتے ہیں خواہ سمندر کی جھاگ جتنے ہوں',ar:'من قالها ثلاثاً غُفرت ذنوبه وإن كانت مثل زبد البحر',bn:'যে ৩ বার পড়বে তার গুনাহ মাফ হবে যদিও তা সমুদ্রের ফেনার মতো হয়'},
+    ref:'Abu Dawud 1517, Tirmidhi 3577 (Sahih)',did:'istgh'
+  },];
+
+const IMPORT_ASMA = [{n:1,ar:'اَللّٰہ',tr:'Allah',me:{hi:'वह जो केवल पूजा के योग्य है',en:'The One worthy of all worship',ur:'وہ جو صرف عبادت کے لائق ہے',ar:'الذي يستحق العبادة وحده',bn:'তিনি যিনি একমাত্র উপাসনার যোগ্য'}},
+ {n:2,ar:'اَلرَّحْمٰن',tr:'Ar-Rahman',me:{hi:'अत्यंत दयालु',en:'The Most Gracious',ur:'انتہائی مہربان',ar:'بالغ الرحمة',bn:'অত্যন্ত দয়ালু'}},
+ {n:3,ar:'اَلرَّحِيْم',tr:'Ar-Raheem',me:{hi:'विशेष रूप से दयालु',en:'The Most Merciful',ur:'خصوصی رحمت والا',ar:'الرحيم بالمؤمنين',bn:'বিশেষভাবে দয়ালু'}},
+ {n:4,ar:'اَلْمَلِك',tr:'Al-Malik',me:{hi:'राजाओं का राजा',en:'The Absolute Sovereign',ur:'بادشاہوں کا بادشاہ',ar:'ملك الملوك',bn:'রাজাদের রাজা'}},
+ {n:5,ar:'اَلْقُدُّوْس',tr:'Al-Quddus',me:{hi:'परम पवित्र',en:'The Most Holy',ur:'بالکل پاک',ar:'المنزه عن كل نقص',bn:'সর্বপবিত্র'}},
+ {n:6,ar:'اَلسَّلَام',tr:'As-Salam',me:{hi:'शांति देने वाला',en:'The Source of Peace',ur:'سلامتی دینے والا',ar:'مصدر السلام والأمان',bn:'শান্তির উৎস'}},
+ {n:7,ar:'اَلْمُؤْمِن',tr:'Al-Mumin',me:{hi:'विश्वास दिलाने वाला',en:'The Grantor of Security',ur:'امن دینے والا',ar:'المؤمِّن بالأمان',bn:'নিরাপত্তাদাতা'}},
+ {n:8,ar:'اَلْمُهَيْمِن',tr:'Al-Muhaymin',me:{hi:'सब पर निगरान',en:'The Guardian, Overseer',ur:'نگران، حفاظت کرنے والا',ar:'المهيمن على كل شيء',bn:'সর্বোপরি তত্ত্বাবধায়ক'}},
+ {n:9,ar:'اَلْعَزِيْز',tr:'Al-Aziz',me:{hi:'सर्वशक्तिमान, अजेय',en:'The Almighty, Invincible',ur:'سب سے زبردست',ar:'الغالب الذي لا يُقهر',bn:'সর্বশক্তিমান অপরাজেয়'}},
+ {n:10,ar:'اَلْجَبَّار',tr:'Al-Jabbar',me:{hi:'ज़बरदस्त, सब पर प्रभावी',en:'The Compeller',ur:'زبردست، قہر والا',ar:'القاهر فوق عباده',bn:'প্রচণ্ড শক্তিশালী'}},
+ {n:11,ar:'اَلْمُتَكَبِّر',tr:'Al-Mutakabbir',me:{hi:'सर्वोच्च महिमा वाला',en:'The Supreme in Greatness',ur:'بڑائی والا',ar:'المتعالي بكبريائه',bn:'সর্বোচ্চ গৌরবান্বিত'}},
+ {n:12,ar:'اَلْخَالِق',tr:'Al-Khaliq',me:{hi:'सृष्टिकर्ता',en:'The Creator',ur:'خالق، پیدا کرنے والا',ar:'خالق كل شيء',bn:'সৃষ্টিকর্তা'}},
+ {n:13,ar:'اَلْبَارِئ',tr:'Al-Bari',me:{hi:'हर चीज़ का निर्माता',en:'The Originator',ur:'ہر چیز بنانے والا',ar:'المبدع الصانع',bn:'সব কিছুর উদ্ভাবক'}},
+ {n:14,ar:'اَلْمُصَوِّر',tr:'Al-Musawwir',me:{hi:'रूप देने वाला',en:'The Shaper of Beauty',ur:'صورت بنانے والا',ar:'المصوِّر للخلق',bn:'আকৃতিদাতা'}},
+ {n:15,ar:'اَلْغَفَّار',tr:'Al-Ghaffar',me:{hi:'बहुत माफ करने वाला',en:'The Repeatedly Forgiving',ur:'بہت بخشنے والا',ar:'كثير المغفرة',bn:'বারবার ক্ষমাকারী'}},
+ {n:16,ar:'اَلْقَهَّار',tr:'Al-Qahhar',me:{hi:'सबको दबाने वाला',en:'The Subduer',ur:'غالب، سب کو دبانے والا',ar:'القاهر لكل شيء',bn:'সব কিছু দমনকারী'}},
+ {n:17,ar:'اَلْوَهَّاب',tr:'Al-Wahhab',me:{hi:'बहुत देने वाला',en:'The Bestower of Gifts',ur:'بہت عطا کرنے والا',ar:'كثير العطاء',bn:'অনেক দানকারী'}},
+ {n:18,ar:'اَلرَّزَّاق',tr:'Ar-Razzaq',me:{hi:'रोज़ी देने वाला',en:'The Provider',ur:'رزق دینے والا',ar:'رازق الخلق',bn:'রিযিকদাতা'}},
+ {n:19,ar:'اَلْفَتَّاح',tr:'Al-Fattah',me:{hi:'हर राह खोलने वाला',en:'The Opener, Judge',ur:'ہر مشکل کھولنے والا',ar:'فاتح الأبواب',bn:'সব পথ উন্মোচনকারী'}},
+ {n:20,ar:'اَلْعَلِيْم',tr:'Al-Alim',me:{hi:'सर्वज्ञ',en:'The All-Knowing',ur:'سب کچھ جاننے والا',ar:'العالم بكل شيء',bn:'সর্বজ্ঞ'}},
+ {n:21,ar:'اَلْقَابِض',tr:'Al-Qabid',me:{hi:'सकुचाने वाला',en:'The Withholder',ur:'روکنے والا',ar:'القابض للأرزاق',bn:'সংকোচনকারী'}},
+ {n:22,ar:'اَلْبَاسِط',tr:'Al-Basit',me:{hi:'फैलाने वाला',en:'The Extender',ur:'کشادگی دینے والا',ar:'الباسط للرزق',bn:'বিস্তারকারী'}},
+ {n:23,ar:'اَلْخَافِض',tr:'Al-Khafid',me:{hi:'नीचा करने वाला',en:'The Abaser',ur:'پست کرنے والا',ar:'الخافض للمتكبرين',bn:'নিম্নকারী'}},
+ {n:24,ar:'اَلرَّافِع',tr:'Ar-Rafi',me:{hi:'ऊँचा करने वाला',en:'The Exalter',ur:'بلند کرنے والا',ar:'الرافع للمؤمنين',bn:'উন্নয়নকারী'}},
+ {n:25,ar:'اَلْمُعِزّ',tr:'Al-Muizz',me:{hi:'इज़्ज़त देने वाला',en:'The Bestower of Honour',ur:'عزت دینے والا',ar:'المُعزّ لمن يشاء',bn:'সম্মানদাতা'}},
+ {n:26,ar:'اَلْمُذِلّ',tr:'Al-Mudhill',me:{hi:'ज़लील करने वाला',en:'The Humiliator',ur:'ذلیل کرنے والا',ar:'المُذلّ للعاصين',bn:'অপমানকারী'}},
+ {n:27,ar:'اَلسَّمِيْع',tr:'As-Sami',me:{hi:'सब कुछ सुनने वाला',en:'The All-Hearing',ur:'سب کچھ سننے والا',ar:'السميع لكل شيء',bn:'সর্বশ্রোতা'}},
+ {n:28,ar:'اَلْبَصِيْر',tr:'Al-Basir',me:{hi:'सब कुछ देखने वाला',en:'The All-Seeing',ur:'سب کچھ دیکھنے والا',ar:'البصير بكل شيء',bn:'সর্বদ্রষ্টা'}},
+ {n:29,ar:'اَلْحَكَم',tr:'Al-Hakam',me:{hi:'न्यायाधीश',en:'The Impartial Judge',ur:'فیصلہ کرنے والا',ar:'الحاكم بالعدل',bn:'ন্যায়বিচারক'}},
+ {n:30,ar:'اَلْعَدْل',tr:'Al-Adl',me:{hi:'न्यायकारी',en:'The Utterly Just',ur:'عادل',ar:'العادل في أحكامه',bn:'ন্যায়পরায়ণ'}},
+ {n:31,ar:'اَللَّطِيْف',tr:'Al-Latif',me:{hi:'सूक्ष्म, कृपालु',en:'The Subtle, Kind',ur:'لطیف، باریک بین',ar:'اللطيف بعباده',bn:'সূক্ষ্ম দয়ালু'}},
+ {n:32,ar:'اَلْخَبِيْر',tr:'Al-Khabir',me:{hi:'सब से बाखबर',en:'The All-Aware',ur:'باخبر، آگاہ',ar:'الخبير بكل شيء',bn:'সর্বসচেতন'}},
+ {n:33,ar:'اَلْحَلِيْم',tr:'Al-Halim',me:{hi:'अत्यंत सहनशील',en:'The Most Forbearing',ur:'بردبار، حلیم',ar:'الحليم المتأني',bn:'অত্যন্ত সহনশীল'}},
+ {n:34,ar:'اَلْعَظِيْم',tr:'Al-Azim',me:{hi:'सबसे महान',en:'The Most Great',ur:'بہت بڑا',ar:'العظيم في ذاته',bn:'সর্বমহান'}},
+ {n:35,ar:'اَلْغَفُوْر',tr:'Al-Ghafur',me:{hi:'माफ करने वाला',en:'The Forgiving',ur:'معاف کرنے والا',ar:'الغافر للذنوب',bn:'ক্ষমাশীল'}},
+ {n:36,ar:'اَلشَّكُوْر',tr:'Ash-Shakur',me:{hi:'शुक्रगुज़ार',en:'The Appreciative',ur:'شکر قبول کرنے والا',ar:'الشاكر لعباده',bn:'কৃতজ্ঞতা স্বীকারকারী'}},
+ {n:37,ar:'اَلْعَلِيّ',tr:'Al-Ali',me:{hi:'सर्वोच्च',en:'The Most High',ur:'بلند، اعلیٰ',ar:'المتعالي فوق كل شيء',bn:'সর্বোচ্চ'}},
+ {n:38,ar:'اَلْكَبِيْر',tr:'Al-Kabir',me:{hi:'बड़ाई वाला',en:'The Most Great',ur:'بڑائی والا',ar:'الكبير في عظمته',bn:'মহত্ত্বশালী'}},
+ {n:39,ar:'اَلْحَفِيْظ',tr:'Al-Hafiz',me:{hi:'हिफाज़त करने वाला',en:'The Preserver',ur:'حفاظت کرنے والا',ar:'الحافظ للخلق',bn:'সংরক্ষণকারী'}},
+ {n:40,ar:'اَلْمُقِيْت',tr:'Al-Muqit',me:{hi:'खाना देने वाला',en:'The Sustainer',ur:'خوراک دینے والا',ar:'المُغذِّي للخلق',bn:'পালনকর্তা'}},
+ {n:41,ar:'اَلْحَسِيْب',tr:'Al-Hasib',me:{hi:'हिसाब लेने वाला',en:'The Reckoner',ur:'حساب لینے والا',ar:'المحاسب للعباد',bn:'হিসাবগ্রহণকারী'}},
+ {n:42,ar:'اَلْجَلِيْل',tr:'Al-Jalil',me:{hi:'जलाल वाला',en:'The Majestic',ur:'جلال والا',ar:'الجليل في عظمته',bn:'মহিমান্বিত'}},
+ {n:43,ar:'اَلْكَرِيْم',tr:'Al-Karim',me:{hi:'बहुत करम वाला',en:'The Most Generous',ur:'بہت کریم',ar:'الكريم الجواد',bn:'অত্যন্ত উদার'}},
+ {n:44,ar:'اَلرَّقِيْب',tr:'Ar-Raqib',me:{hi:'निगरानी करने वाला',en:'The Watchful',ur:'نگران',ar:'الرقيب على أعمال العباد',bn:'নজরদারকারী'}},
+ {n:45,ar:'اَلْمُجِيْب',tr:'Al-Mujib',me:{hi:'दुआ क़बूल करने वाला',en:'The Responsive',ur:'دعا قبول کرنے والا',ar:'المجيب للدعاء',bn:'দুআ কবুলকারী'}},
+ {n:46,ar:'اَلْوَاسِع',tr:'Al-Wasi',me:{hi:'सब को समेटने वाला',en:'The All-Encompassing',ur:'وسعت والا',ar:'الواسع رحمته وعلمه',bn:'সর্বব্যাপী'}},
+ {n:47,ar:'اَلْحَكِيْم',tr:'Al-Hakim',me:{hi:'परम बुद्धिमान',en:'The All-Wise',ur:'حکیم، دانا',ar:'الحكيم في أفعاله',bn:'পরম জ্ঞানী'}},
+ {n:48,ar:'اَلْوَدُوْد',tr:'Al-Wadud',me:{hi:'मुहब्बत करने वाला',en:'The Loving',ur:'محبت کرنے والا',ar:'المحبّ لعباده المؤمنين',bn:'প্রেমময়'}},
+ {n:49,ar:'اَلْمَجِيْد',tr:'Al-Majid',me:{hi:'शान वाला',en:'The Glorious',ur:'مجید، شان والا',ar:'المجيد في ذاته',bn:'মহাগৌরবান্বিত'}},
+ {n:50,ar:'اَلْبَاعِث',tr:'Al-Baaith',me:{hi:'उठाने वाला',en:'The Resurrector',ur:'اٹھانے والا',ar:'الباعث للأموات',bn:'পুনরুত্থানকারী'}},
+ {n:51,ar:'اَلشَّهِيْد',tr:'Ash-Shahid',me:{hi:'हर जगह मौजूद गवाह',en:'The Witness',ur:'گواہ',ar:'الشاهد على كل شيء',bn:'সর্বত্র সাক্ষী'}},
+ {n:52,ar:'اَلْحَقّ',tr:'Al-Haqq',me:{hi:'परम सत्य',en:'The Absolute Truth',ur:'سچا، حق',ar:'الحق في ذاته وصفاته',bn:'পরম সত্য'}},
+ {n:53,ar:'اَلْوَكِيْل',tr:'Al-Wakil',me:{hi:'भरोसेमंद वकील',en:'The Trustee',ur:'وکیل، بھروسے کا',ar:'الوكيل عن عباده',bn:'বিশ্বস্ত অভিভাবক'}},
+ {n:54,ar:'اَلْقَوِيّ',tr:'Al-Qawi',me:{hi:'ताकतवर',en:'The All-Strong',ur:'طاقتور',ar:'القوي الشديد',bn:'অত্যন্ত শক্তিশালী'}},
+ {n:55,ar:'اَلْمَتِيْن',tr:'Al-Matin',me:{hi:'दृढ़, मज़बूत',en:'The Firm',ur:'مضبوط',ar:'المتين القوي',bn:'দৃঢ় মজবুত'}},
+ {n:56,ar:'اَلْوَلِيّ',tr:'Al-Wali',me:{hi:'दोस्त, संरक्षक',en:'The Protecting Friend',ur:'دوست، محافظ',ar:'ولي المؤمنين',bn:'বন্ধু রক্ষাকর্তা'}},
+ {n:57,ar:'اَلْحَمِيْد',tr:'Al-Hamid',me:{hi:'हर तारीफ के लायक',en:'The Praiseworthy',ur:'تعریف کے لائق',ar:'المستحق للحمد',bn:'প্রশংসাযোগ্য'}},
+ {n:58,ar:'اَلْمُحْصِيْ',tr:'Al-Muhsi',me:{hi:'गिनने वाला',en:'The Accounter',ur:'گنتی کرنے والا',ar:'المحصي لكل شيء',bn:'গণনাকারী'}},
+ {n:59,ar:'اَلْمُبْدِئ',tr:'Al-Mubdi',me:{hi:'शुरुआत करने वाला',en:'The Originator',ur:'ابتدا کرنے والا',ar:'المبدئ للخلق',bn:'সূচনাকারী'}},
+ {n:60,ar:'اَلْمُعِيْد',tr:'Al-Muid',me:{hi:'दोबारा उठाने वाला',en:'The Restorer',ur:'دوبارہ اٹھانے والا',ar:'المعيد للخلق',bn:'পুনরুদ্ধারকারী'}},
+ {n:61,ar:'اَلْمُحْيِيْ',tr:'Al-Muhyi',me:{hi:'ज़िंदगी देने वाला',en:'The Giver of Life',ur:'زندگی دینے والا',ar:'المُحيي للأموات',bn:'জীবনদাতা'}},
+ {n:62,ar:'اَلْمُمِيْت',tr:'Al-Mumit',me:{hi:'मौत देने वाला',en:'The Taker of Life',ur:'موت دینے والا',ar:'المُميت للأحياء',bn:'মৃত্যুদাতা'}},
+ {n:63,ar:'اَلْحَيّ',tr:'Al-Hayy',me:{hi:'हमेशा ज़िंदा',en:'The Eternally Living',ur:'ہمیشہ زندہ',ar:'الحي الدائم',bn:'চিরজীবী'}},
+ {n:64,ar:'اَلْقَيُّوْم',tr:'Al-Qayyum',me:{hi:'हमेशा कायम रहने वाला',en:'The Self-Sustaining',ur:'قائم رہنے والا',ar:'القائم بنفسه',bn:'স্বয়ংসম্পূর্ণ'}},
+ {n:65,ar:'اَلْوَاجِد',tr:'Al-Wajid',me:{hi:'जो चाहे पाने वाला',en:'The Finder',ur:'جو چاہے پانے والا',ar:'الواجد لما يشاء',bn:'যা চান তা পানকারী'}},
+ {n:66,ar:'اَلْمَاجِد',tr:'Al-Majid',me:{hi:'जलाल और करम वाला',en:'The Noble',ur:'جلال اور کرم والا',ar:'الماجد الكريم',bn:'মহৎ মহিমান্বিত'}},
+ {n:67,ar:'اَلْوَاحِد',tr:'Al-Wahid',me:{hi:'एकमात्र',en:'The One',ur:'اکیلا، واحد',ar:'الواحد الأحد',bn:'একমাত্র'}},
+ {n:68,ar:'اَلصَّمَد',tr:'As-Samad',me:{hi:'सबका सहारा',en:'The Eternal Refuge',ur:'سب کا سہارا',ar:'الصمد الذي يلجأ إليه',bn:'সবার আশ্রয়'}},
+ {n:69,ar:'اَلْقَادِر',tr:'Al-Qadir',me:{hi:'हर चीज़ पर क़ादिर',en:'The All-Powerful',ur:'قدرت والا',ar:'القادر على كل شيء',bn:'সর্বক্ষমতাবান'}},
+ {n:70,ar:'اَلْمُقْتَدِر',tr:'Al-Muqtadir',me:{hi:'बड़ी ताकत वाला',en:'The Powerful',ur:'بڑی قوت والا',ar:'المقتدر القوي',bn:'মহাশক্তিশালী'}},
+ {n:71,ar:'اَلْمُقَدِّم',tr:'Al-Muqaddim',me:{hi:'आगे करने वाला',en:'The Expediter',ur:'آگے کرنے والا',ar:'المقدِّم لما يشاء',bn:'অগ্রগামী করণকারী'}},
+ {n:72,ar:'اَلْمُؤَخِّر',tr:'Al-Muakhkhir',me:{hi:'पीछे करने वाला',en:'The Delayer',ur:'پیچھے کرنے والا',ar:'المؤخِّر لما يشاء',bn:'পিছিয়ে দেওয়াকারী'}},
+ {n:73,ar:'اَلْاَوَّل',tr:'Al-Awwal',me:{hi:'सबसे पहला',en:'The First',ur:'سب سے پہلا',ar:'الأول قبل كل شيء',bn:'সর্বপ্রথম'}},
+ {n:74,ar:'اَلْاٰخِر',tr:'Al-Akhir',me:{hi:'सबसे आखिरी',en:'The Last',ur:'سب سے آخری',ar:'الآخر بعد كل شيء',bn:'সর্বশেষ'}},
+ {n:75,ar:'اَلظَّاهِر',tr:'Az-Zahir',me:{hi:'ज़ाहिर, प्रत्यक्ष',en:'The Manifest',ur:'ظاہر',ar:'الظاهر بآياته',bn:'প্রকাশমান'}},
+ {n:76,ar:'اَلْبَاطِن',tr:'Al-Batin',me:{hi:'छुपा हुआ, सूक्ष्म',en:'The Hidden',ur:'باطن، پوشیدہ',ar:'الباطن المستتر',bn:'গুপ্ত অদৃশ্য'}},
+ {n:77,ar:'اَلْوَالِيْ',tr:'Al-Wali',me:{hi:'शासक, मालिक',en:'The Sole Governor',ur:'حاکم، مالک',ar:'الوالي المدبِّر',bn:'একমাত্র শাসক'}},
+ {n:78,ar:'اَلْمُتَعَالِيْ',tr:'Al-Mutaali',me:{hi:'सबसे ऊँचा',en:'The Self Exalted',ur:'سب سے اونچا',ar:'المتعالي فوق كل شيء',bn:'সর্বোচ্চে আসীন'}},
+ {n:79,ar:'اَلْبَرّ',tr:'Al-Barr',me:{hi:'नेकी करने वाला',en:'The Source of All Goodness',ur:'نیکی کرنے والا',ar:'البرّ المُحسن',bn:'নেকির উৎস'}},
+ {n:80,ar:'اَلتَّوَّاب',tr:'At-Tawwab',me:{hi:'बार बार तौबा क़बूल करने वाला',en:'The Acceptor of Repentance',ur:'توبہ قبول کرنے والا',ar:'التواب على عباده',bn:'বারবার তওবা কবুলকারী'}},
+ {n:81,ar:'اَلْمُنْتَقِم',tr:'Al-Muntaqim',me:{hi:'बदला लेने वाला',en:'The Avenger',ur:'انتقام لینے والا',ar:'المنتقم من الظالمين',bn:'প্রতিশোধগ্রহণকারী'}},
+ {n:82,ar:'اَلْعَفُوّ',tr:'Al-Afuw',me:{hi:'माफ करने वाला',en:'The Pardoner',ur:'معاف کرنے والا',ar:'العفوّ عن الذنوب',bn:'পাপ মার্জনাকারী'}},
+ {n:83,ar:'اَلرَّؤُوْف',tr:'Ar-Rauf',me:{hi:'बहुत नरम दिल',en:'The Most Kind',ur:'بہت شفیق',ar:'الرؤوف بعباده',bn:'অত্যন্ত স্নেহশীল'}},
+ {n:84,ar:'مَالِكُ الْمُلْك',tr:'Malik ul Mulk',me:{hi:'बादशाहत का मालिक',en:'Owner of all Sovereignty',ur:'سلطنت کا مالک',ar:'مالك الملك وحده',bn:'সার্বভৌমত্বের মালিক'}},
+ {n:85,ar:'ذُو الْجَلَالِ وَالْاِكْرَام',tr:'Dhul Jalali wal Ikram',me:{hi:'जलाल और करम वाला',en:'Lord of Majesty and Bounty',ur:'جلال اور اکرام والا',ar:'ذو الجلال والإكرام',bn:'মহিমা ও সম্মানের অধিকারী'}},
+ {n:86,ar:'اَلْمُقْسِط',tr:'Al-Muqsit',me:{hi:'न्यायकारी',en:'The Equitable',ur:'انصاف کرنے والا',ar:'المقسط العادل',bn:'ন্যায়পরায়ণ'}},
+ {n:87,ar:'اَلْجَامِع',tr:'Al-Jami',me:{hi:'सबको जमा करने वाला',en:'The Gatherer',ur:'جمع کرنے والا',ar:'الجامع للخلق',bn:'সমবেতকারী'}},
+ {n:88,ar:'اَلْغَنِيّ',tr:'Al-Ghani',me:{hi:'बेनियाज़, बेपरवाह',en:'The Self-Sufficient',ur:'بے نیاز',ar:'الغني عن كل شيء',bn:'অমুখাপেক্ষী'}},
+ {n:89,ar:'اَلْمُغْنِيْ',tr:'Al-Mughni',me:{hi:'अमीर बनाने वाला',en:'The Enricher',ur:'مالدار بنانے والا',ar:'المُغني لمن يشاء',bn:'ধনী করণকারী'}},
+ {n:90,ar:'اَلْمَانِع',tr:'Al-Mani',me:{hi:'रोकने वाला',en:'The Preventer',ur:'روکنے والا',ar:'المانع لما يشاء',bn:'বাধাদানকারী'}},
+ {n:91,ar:'اَلضَّارّ',tr:'Ad-Darr',me:{hi:'नुकसान देने वाला',en:'The Distresser',ur:'نقصان پہنچانے والا',ar:'الضار لمن يشاء',bn:'ক্ষতিকারক'}},
+ {n:92,ar:'اَلنَّافِع',tr:'An-Nafi',me:{hi:'फायदा देने वाला',en:'The Benefiter',ur:'نفع دینے والا',ar:'النافع لمن يشاء',bn:'উপকারকারী'}},
+ {n:93,ar:'اَلنُّوْر',tr:'An-Nur',me:{hi:'नूर, रोशनी देने वाला',en:'The Light',ur:'نور، روشنی',ar:'نور السماوات والأرض',bn:'আলো'}},
+ {n:94,ar:'اَلْهَادِيْ',tr:'Al-Hadi',me:{hi:'राह दिखाने वाला',en:'The Guide',ur:'ہدایت دینے والا',ar:'الهادي إلى الصراط المستقيم',bn:'পথপ্রদর্শক'}},
+ {n:95,ar:'اَلْبَدِيْع',tr:'Al-Badi',me:{hi:'अनोखा रचने वाला',en:'The Originator',ur:'انوکھا بنانے والا',ar:'البديع المبتكر',bn:'অনন্য স্রষ্টা'}},
+ {n:96,ar:'اَلْبَاقِيْ',tr:'Al-Baqi',me:{hi:'हमेशा रहने वाला',en:'The Everlasting',ur:'ہمیشہ رہنے والا',ar:'الباقي الدائم',bn:'চিরস্থায়ী'}},
+ {n:97,ar:'اَلْوَارِث',tr:'Al-Waris',me:{hi:'सब का वारिस',en:'The Inheritor',ur:'وارث',ar:'الوارث لكل شيء',bn:'উত্তরাধিকারী'}},
+ {n:98,ar:'اَلرَّشِيْد',tr:'Ar-Rashid',me:{hi:'सही राह बताने वाला',en:'The Guide to the Right Path',ur:'سیدھی راہ دکھانے والا',ar:'الرشيد المُهدي',bn:'সঠিক পথের দিকনির্দেশক'}},
+ {n:99,ar:'اَلصَّبُوْر',tr:'As-Sabur',me:{hi:'बहुत सब्र वाला',en:'The Patient',ur:'بہت صبر والا',ar:'الصبور الحليم',bn:'অত্যন্ত ধৈর্যশীল'}},];
+
+async function importAppDhikrData(){
+  if(!FBURL){toast('Pehle Settings mein Firebase URL daalo','warn');return;}
+  const ok=await ensureToken();
+  if(!ok){toast('Firebase Auth zaroori hai — Settings mein email/password set karo','warn');return;}
+  const btn=G('importDhikrBtn');
+  if(btn){btn.disabled=true;btn.textContent='\u23f3 Importing...';}
+  let count=0;
+  for(const d of IMPORT_DHIKR){
+    const r=await fbPUT('/app_dhikr/'+d.id, d);
+    if(r) count++;
+  }
+  if(btn){btn.disabled=false;btn.textContent='\u2705 '+count+' Imported!';}
+  toast('\u2705 '+count+' dhikr Firebase mein import ho gaye!');
+  setTimeout(()=>{if(btn)btn.textContent='\ud83d\udce5 Import from App';},3000);
+  loadAppDhikrList();
+}
+
+async function importAsmaData(){
+  if(!FBURL){toast('Pehle Settings mein Firebase URL daalo','warn');return;}
+  const ok=await ensureToken();
+  if(!ok){toast('Firebase Auth zaroori hai — Settings mein email/password set karo','warn');return;}
+  const btn=G('importAsmaBtn');
+  if(btn){btn.disabled=true;btn.textContent='\u23f3 Importing 99 Names...';}
+  try{
+    const resp=await fetch('https://abdulquadirqureshi3-star.github.io/digital-tasbih/');
+    const html=await resp.text();
+    const match=html.match(/let\s+ASMA\s*=\s*\[([\s\S]*?)\];/);
+    if(!match){toast('ASMA data nahi mili HTML mein','err');if(btn){btn.disabled=false;btn.textContent='\ud83d\udce5 Import 99 Names';}return;}
+    const asmaArr=new Function('return ['+match[1]+'];')();
+    let count=0;
+    for(const a of asmaArr){
+      const data={n:a.n, ar:a.ar, tr:a.tr, me:a.me||{}};
+      const r=await fbPUT('/app_asma/'+a.n, data);
+      if(r) count++;
+    }
+    if(btn){btn.disabled=false;btn.textContent='\u2705 '+count+' Names Imported!';}
+    toast('\u2705 '+count+' names Firebase mein import ho gaye!');
+    setTimeout(()=>{if(btn)btn.textContent='\ud83d\udce5 Import 99 Names';},3000);
+    loadAsmaList();
+  }catch(e){
+    toast('Error: '+e.message,'err');
+    if(btn){btn.disabled=false;btn.textContent='\ud83d\udce5 Import 99 Names';}
+  }
+}
+
+
+// ══════════════════════════════════════════════
+function getMigrationSeeds(){
+  const seeds=window.MIGRATION_SEEDS||{};
+  return {
+    dhikr:Array.isArray(seeds.dhikr)&&seeds.dhikr.length?seeds.dhikr:IMPORT_DHIKR,
+    guide:Array.isArray(seeds.guide)&&seeds.guide.length?seeds.guide:IMPORT_GUIDE,
+    asma:Array.isArray(seeds.asma)&&seeds.asma.length?seeds.asma:IMPORT_ASMA
+  };
+}
+function setMigrationStatus(msg,tone){
+  const el=G('migrationStatus');
+  if(!el) return;
+  el.textContent=msg;
+  el.style.color=tone==='err'?'var(--red)':tone==='warn'?'var(--gold)':'var(--t1)';
+}
+function appendMigrationLog(msg){
+  const el=G('migrationLog');
+  if(!el) return;
+  const stamp=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  el.textContent=(el.textContent==='No migration run yet.'?'':el.textContent+'\n')+'['+stamp+'] '+msg;
+  el.scrollTop=el.scrollHeight;
+}
+function setActionButton(id, loading, idleText, loadingText, doneText){
+  const btn=G(id);
+  if(!btn) return;
+  btn.disabled=!!loading;
+  if(loading) btn.textContent=loadingText;
+  else if(doneText) btn.textContent=doneText;
+  else btn.textContent=idleText;
+}
+async function loadMigrationStatus(){
+  const [dhikr,guide,asma]=await Promise.all([
+    fbGET('/app_dhikr'),
+    fbGET('/guide'),
+    fbGET('/app_asma')
+  ]);
+  if(G('migDhikrCount')) G('migDhikrCount').textContent=dhikr&&typeof dhikr==='object'?Object.keys(dhikr).length:0;
+  if(G('migGuideCount')) G('migGuideCount').textContent=guide&&typeof guide==='object'?Object.keys(guide).length:0;
+  if(G('migAsmaCount')) G('migAsmaCount').textContent=asma&&typeof asma==='object'?Object.keys(asma).length:0;
+}
+async function requireMigrationReady(){
+  if(!FBURL){
+    toast('Pehle Settings mein Firebase URL daalo','warn');
+    setMigrationStatus('Firebase URL missing. Settings update karo.','warn');
+    return false;
+  }
+  const ok=await ensureToken();
+  if(!ok){
+    toast('Firebase Auth zaroori hai - Settings mein email/password set karo','warn');
+    setMigrationStatus('Firebase Auth missing. Settings mein email/password save karo.','warn');
+    return false;
+  }
+  return true;
+}
+
+async function importAppDhikrData(btnId='importDhikrBtn', quiet){
+  if(!await requireMigrationReady()) return 0;
+  setActionButton(btnId,true,'Import from App','Loading...','');
+  const source=getMigrationSeeds().dhikr;
+  let count=0;
+  for(let i=0;i<source.length;i++){
+    const d={...source[i],order:source[i].order||i+1};
+    const r=await fbPUT('/app_dhikr/'+d.id, d);
+    if(r) count++;
+  }
+  setActionButton(btnId,false,'Import from App','', 'Done: '+count);
+  setTimeout(()=>setActionButton(btnId,false,'Import from App','',''),3000);
+  if(!quiet) toast('\u2705 '+count+' dhikr Firebase mein import ho gaye!');
+  setMigrationStatus(count+' app dhikr migrated.');
+  appendMigrationLog('App Dhikr migrated: '+count+' items');
+  loadAppDhikrList();
+  loadMigrationStatus();
+  return count;
+}
+
+async function importGuideData(btnId='migGuideBtn', quiet){
+  if(!await requireMigrationReady()) return 0;
+  const source=getMigrationSeeds().guide;
+  if(!source.length){
+    toast('Guide seed data nahi mili','err');
+    setMigrationStatus('Guide seed data missing.','err');
+    return 0;
+  }
+  setActionButton(btnId,true,'Guide','Loading Guide...','');
+  let count=0;
+  for(let i=0;i<source.length;i++){
+    const g={...source[i],order:source[i].order||i+1};
+    const r=await fbPUT('/guide/'+g.id, g);
+    if(r) count++;
+  }
+  setActionButton(btnId,false,'Guide','', 'Done: '+count);
+  setTimeout(()=>setActionButton(btnId,false,'Guide','',''),3000);
+  if(!quiet) toast('\u2705 '+count+' guide entries Firebase mein import ho gayi!');
+  setMigrationStatus(count+' guide entries migrated.');
+  appendMigrationLog('Guide migrated: '+count+' items');
+  loadMigrationStatus();
+  return count;
+}
+
+async function importAsmaData(btnId='importAsmaBtn', quiet){
+  if(!await requireMigrationReady()) return 0;
+  const source=getMigrationSeeds().asma;
+  if(!source.length){
+    toast('99 Names seed data nahi mili','err');
+    setMigrationStatus('99 Names seed data missing.','err');
+    return 0;
+  }
+  setActionButton(btnId,true,'Import 99 Names','Loading 99 Names...','');
+  let count=0;
+  for(const a of source){
+    const data={n:a.n, ar:a.ar, tr:a.tr, me:a.me||{}};
+    const r=await fbPUT('/app_asma/'+a.n, data);
+    if(r) count++;
+  }
+  setActionButton(btnId,false,'Import 99 Names','', 'Done: '+count);
+  setTimeout(()=>setActionButton(btnId,false,'Import 99 Names','',''),3000);
+  if(!quiet) toast('\u2705 '+count+' names Firebase mein import ho gaye!');
+  setMigrationStatus(count+' names migrated.');
+  appendMigrationLog('99 Names migrated: '+count+' items');
+  loadAsmaList();
+  loadMigrationStatus();
+  return count;
+}
+
+function runMigrationDhikr(){ return importAppDhikrData('migDhikrBtn'); }
+function runMigrationGuide(){ return importGuideData('migGuideBtn'); }
+function runMigrationAsma(){ return importAsmaData('migAsmaBtn'); }
+
+async function runFullMigration(){
+  if(!await requireMigrationReady()) return;
+  const btn=G('migRunAllBtn');
+  if(btn){btn.disabled=true;btn.textContent='Running Full Migration...';}
+  setMigrationStatus('Running full migration...');
+  appendMigrationLog('Full migration started');
+  try{
+    const dhikrCount=await importAppDhikrData('migDhikrBtn', true);
+    const guideCount=await importGuideData('migGuideBtn', true);
+    const asmaCount=await importAsmaData('migAsmaBtn', true);
+    setMigrationStatus('Full migration completed successfully.');
+    appendMigrationLog('Full migration done: dhikr='+dhikrCount+', guide='+guideCount+', names='+asmaCount);
+    toast('\u2705 Full migration complete!');
+  }catch(e){
+    setMigrationStatus('Full migration failed: '+e.message,'err');
+    appendMigrationLog('Full migration failed: '+e.message);
+    toast('Migration Error: '+e.message,'err');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Run Full Migration';}
+    loadMigrationStatus();
+  }
+}
+
+// DAILY DHIKR ADMIN FUNCTIONS
+// Firebase path: /daily_sections/{sectionId}
+// Structure: {id, title, order, hadith_ar, hadith_text, hadith_ref,
+//             dhikr:[{id,ar,lo:{hi,en,ur},icon,tgt}]}
+// ══════════════════════════════════════════════
+
+let currentDhikrRows = []; // dhikr items in current edit form
+
+function loadDailySectionList(){
+  fbGET('/daily_sections').then(function(data){
+    var el=G('dailySectionList');
+    if(!el)return;
+    if(!data||typeof data!=='object'||!Object.keys(data).length){
+      el.innerHTML='<div class="empty"><div class="ei">🌟</div><div class="et">Koi section nahi hai.<br>"New Section" button se banao.</div></div>';
+      return;
+    }
+    var sections=Object.values(data).sort(function(a,b){return (a.order||0)-(b.order||0);});
+    var html='';
+    sections.forEach(function(sec){
+      var dhikrCount=(sec.dhikr&&sec.dhikr.length)||0;
+      html+='<div style="background:var(--s1);border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--b2);">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+      html+='<div>';
+      html+='<div style="font-size:14px;font-weight:600;color:var(--t1);">'+sec.title+'</div>';
+      html+='<div style="font-size:11px;color:var(--t3);margin-top:2px;">'+dhikrCount+' dhikr • Order: '+(sec.order||1)+'</div>';
+      html+='</div>';
+      html+='<div style="display:flex;gap:6px;">';
+      html+='<button class="btn btn-gh btn-sm" data-sid="'+sec.id+'" onclick="editSectionBtn(this)">✏️ Edit</button>';
+      html+='<button class="btn btn-dn btn-sm" data-sid="'+sec.id+'" onclick="delSectionBtn(this)">🗑</button>';
+      html+='</div></div>';
+      // Show hadith preview
+      if(sec.hadith_text){
+        html+='<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:6px;">'+sec.hadith_text.slice(0,120)+(sec.hadith_text.length>120?'...':'')+'</div>';
+      }
+      if(sec.hadith_ref){
+        html+='<span style="font-size:11px;color:var(--em);background:var(--em3);padding:3px 10px;border-radius:8px;">📖 '+sec.hadith_ref+'</span>';
+      }
+      // Show dhikr items
+      if(sec.dhikr&&sec.dhikr.length){
+        html+='<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">';
+        sec.dhikr.forEach(function(d){
+          html+='<span style="font-size:12px;background:var(--gold4);color:var(--gold);border:1px solid var(--b1);padding:3px 10px;border-radius:20px;font-family:Amiri,serif;">';
+          html+=d.ar+' <span style="font-family:DM Sans,sans-serif;font-size:10px;">('+d.tgt+'×)</span></span>';
+        });
+        html+='</div>';
+      }
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  });
+}
+
+function editSectionBtn(btn){
+  var sid=btn.getAttribute('data-sid');
+  fbGET('/daily_sections/'+sid).then(function(sec){
+    if(!sec)return;
+    G('editSectionId').value=sid;
+    G('secId').value=sec.id||sid;
+    G('secOrder').value=sec.order||1;
+    G('secTitle').value=sec.title||'';
+    G('secHadithAr').value=sec.hadith_ar||'';
+    G('secHadithText').value=sec.hadith_text||'';
+    G('secHadithRef').value=sec.hadith_ref||'';
+    // Load dhikr rows
+    currentDhikrRows=JSON.parse(JSON.stringify(sec.dhikr||[]));
+    renderDhikrItemRows();
+    G('sectionFormTitle').textContent='Section Edit Karo';
+    G('sectionForm').style.display='block';
+    G('sectionForm').scrollIntoView({behavior:'smooth'});
+  });
+}
+
+function delSectionBtn(btn){
+  var sid=btn.getAttribute('data-sid');
+  showConf('Delete Section?','Poori section aur uske dhikr delete ho jaayenge.',async function(){
+    await fbDEL('/daily_sections/'+sid);
+    toast('🗑 Section deleted');
+    loadDailySectionList();
+  });
+}
+
+function showAddSectionForm(){
+  G('editSectionId').value='';
+  G('secId').value='';G('secOrder').value='1';G('secTitle').value='';
+  G('secHadithAr').value='';G('secHadithText').value='';G('secHadithRef').value='';
+  currentDhikrRows=[];
+  renderDhikrItemRows();
+  G('sectionFormTitle').textContent='New Section';
+  G('sectionForm').style.display='block';
+  G('sectionForm').scrollIntoView({behavior:'smooth'});
+}
+
+function hideSectionForm(){
+  G('sectionForm').style.display='none';
+  currentDhikrRows=[];
+}
+
+function addDhikrItemRow(){
+  currentDhikrRows.push({id:'',ar:'',icon:'📿',tgt:33,lo:{hi:'',en:'',ur:'',ar:'',bn:''}});
+  renderDhikrItemRows();
+}
+
+function removeDhikrRow(i){
+  currentDhikrRows.splice(i,1);
+  renderDhikrItemRows();
+}
+
+function renderDhikrItemRows(){
+  var container=G('secDhikrItems');
+  if(!container)return;
+  if(!currentDhikrRows.length){
+    container.innerHTML='<div style="font-size:12px;color:var(--t3);text-align:center;padding:14px;">Koi dhikr nahi — "+ Dhikr Add Karo" click karo</div>';
+    return;
+  }
+  var html='';
+  currentDhikrRows.forEach(function(d,i){
+    html+='<div style="background:var(--card);border:1px solid var(--b1);border-radius:12px;padding:14px;margin-bottom:10px;position:relative;">';
+    // Row header
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+    html+='<span style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;">📿 DHIKR '+(i+1)+'</span>';
+    html+='<button class="btn btn-dn btn-sm" onclick="removeDhikrRow('+i+')">🗑 Remove</button>';
+    html+='</div>';
+    // Grid fields
+    html+='<div class="fg">';
+    html+='<div class="ff"><div class="flb">ID (Unique) *</div><input class="fin" value="'+(d.id||'')+'" placeholder="e.g. subhanallah" oninput="updateDhikrRowField('+i+',\'id\',this.value.trim())"></div>';
+    html+='<div class="ff"><div class="flb">Icon</div><input class="fin" value="'+(d.icon||'📿')+'" placeholder="📿" oninput="updateDhikrRowField('+i+',\'icon\',this.value)"></div>';
+    html+='<div class="ff full"><div class="flb">Arabic Text *</div><input class="fin" value="'+(d.ar||'')+'" placeholder="سُبْحَانَ اللّٰہ" style="direction:rtl;font-family:Amiri,serif;font-size:18px;" oninput="updateDhikrRowField('+i+',\'ar\',this.value)"></div>';
+    html+='<div class="ff"><div class="flb">Hindi Name</div><input class="fin" value="'+((d.lo&&d.lo.hi)||'')+'" placeholder="सुब्हान अल्लाह" oninput="updateDhikrRowLo('+i+',\'hi\',this.value)"></div>';
+    html+='<div class="ff"><div class="flb">English Name</div><input class="fin" value="'+((d.lo&&d.lo.en)||'')+'" placeholder="SubhanAllah" oninput="updateDhikrRowLo('+i+',\'en\',this.value)"></div>';
+    html+='<div class="ff"><div class="flb">Urdu Name</div><input class="fin" value="'+((d.lo&&d.lo.ur)||'')+'" placeholder="سبحان اللہ" style="direction:rtl;" oninput="updateDhikrRowLo('+i+',\'ur\',this.value)"></div>';
+    html+='<div class="ff"><div class="flb">Arabic Name</div><input class="fin" value="'+((d.lo&&d.lo.ar)||'')+'" placeholder="سبحان الله" style="direction:rtl;font-family:Amiri,serif;" oninput="updateDhikrRowLo('+i+',\'ar\',this.value)"></div>';
+    html+='<div class="ff"><div class="flb">Bengali Name</div><input class="fin" value="'+((d.lo&&d.lo.bn)||'')+'" placeholder="সুবহানআল্লাহ" oninput="updateDhikrRowLo('+i+',\'bn\',this.value)"></div>';
+    html+='<div class="ff"><div class="flb">Target Count</div><input class="fin" type="number" value="'+(d.tgt||33)+'" min="1" oninput="updateDhikrRowField('+i+',\'tgt\',parseInt(this.value)||33)"></div>';
+    html+='</div></div>';
+  });
+  container.innerHTML=html;
+}
+
+function updateDhikrRowField(i, field, val){
+  if(!currentDhikrRows[i]) return;
+  currentDhikrRows[i][field] = val;
+}
+
+function updateDhikrRowLo(i, lang, val){
+  if(!currentDhikrRows[i]) return;
+  if(!currentDhikrRows[i].lo) currentDhikrRows[i].lo={};
+  currentDhikrRows[i].lo[lang] = val;
+}
+
+
+async function saveSectionData(){
+  var id=V('secId');var title=V('secTitle');
+  if(!id){toast('Section ID zaroori hai','warn');return;}
+  if(!title){toast('Title zaroori hai','warn');return;}
+  if(!currentDhikrRows.length){toast('Kam se kam 1 dhikr add karo','warn');return;}
+
+  // Validate dhikr rows
+  for(var i=0;i<currentDhikrRows.length;i++){
+    if(!currentDhikrRows[i].ar){toast('Dhikr '+(i+1)+' ka Arabic zaroori hai','warn');return;}
+    if(!currentDhikrRows[i].id) currentDhikrRows[i].id='dhikr_'+i;
+  }
+
+  var origId=G('editSectionId').value;
+  var data={
+    id:id,
+    title:title,
+    order:parseInt(V('secOrder'))||1,
+    hadith_ar:V('secHadithAr'),
+    hadith_text:V('secHadithText'),
+    hadith_ref:V('secHadithRef'),
+    dhikr:currentDhikrRows
+  };
+
+  // If ID changed, delete old
+  if(origId && origId!==id){
+    await fbDEL('/daily_sections/'+origId);
+  }
+
+  var r=await fbPUT('/daily_sections/'+id, data);
+  if(r){
+    toast('✅ Section saved! App mein aayega.');
+    hideSectionForm();
+    loadDailySectionList();
+  }
+}
+
+
+// ═══════════════════════════════════════════════
+// ANNOUNCEMENTS
+// ═══════════════════════════════════════════════
+function prvAnn(){
+  const t=G('anTitle')&&G('anTitle').value||'',m=G('anMsg')&&G('anMsg').value||'',ico=G('anIcon')&&G('anIcon').value||'📢',btn=G('anBtn')&&G('anBtn').value||'Dekho →';
+  if(G('annPTitle'))G('annPTitle').textContent=t||'Banner Title';
+  if(G('annPMsg'))G('annPMsg').textContent=m||'Message...';
+  if(G('annPIco'))G('annPIco').textContent=ico;
+  if(G('annPBtn'))G('annPBtn').textContent=btn;
+  const type=G('anType')&&G('anType').value||'info';
+  const colors={info:'rgba(74,158,255,.12)',gold:'rgba(201,168,76,.12)',success:'rgba(31,200,126,.10)',warn:'rgba(255,165,0,.10)'};
+  const borders={info:'rgba(74,158,255,.3)',gold:'rgba(201,168,76,.3)',success:'rgba(31,200,126,.25)',warn:'rgba(255,165,0,.3)'};
+  const prev=G('annPreview');
+  if(prev){prev.style.background='linear-gradient(135deg,'+colors[type]+',transparent)';prev.style.borderColor=borders[type];}
+}
+
+async function saveAnnouncement(){
+  const t=V('anTitle'),m=V('anMsg');
+  if(!t||!m){toast('Title aur Message zaroori hain','warn');return;}
+  const data={title:t,message:m,icon:V('anIcon')||'📢',btnText:V('anBtn')||'Dekho →',link:V('anLink')||'',type:(G('anType')&&G('anType').value)||'info',active:G('anActive')&&G('anActive').checked,timestamp:Date.now()};
+  const r=await fbPOST('/announcements',data);
+  if(r){toast('✅ Announcement published!');loadAnnouncements();}
+}
+
+async function deactivateAnnouncement(){
+  showConf('Remove All Announcements?','Saari announcements inactive ho jaayengi.',async function(){
+    const data=await fbGET('/announcements');
+    if(data&&typeof data==='object'){
+      for(const k of Object.keys(data)){await fbPATCH('/announcements/'+k,{active:false});}
+    }
+    toast('✅ Removed');loadAnnouncements();
+  });
+}
+
+async function loadAnnouncements(){
+  const data=await fbGET('/announcements');
+  const tb=G('annTb');if(!tb)return;
+  if(!data||typeof data!=='object'||!Object.keys(data).length){
+    tb.innerHTML='<tr><td colspan="4"><div class="empty"><div class="ei">📢</div><div class="et">Koi announcement nahi.</div></div></td></tr>';return;
+  }
+  const entries=Object.entries(data).sort((a,b)=>(b[1].timestamp||0)-(a[1].timestamp||0));
+  tb.innerHTML=entries.map(([k,n])=>`<tr>
+    <td><b>${n.icon||''} ${n.title||''}</b><div style="font-size:11px;color:var(--t3);">${(n.message||'').slice(0,50)}...</div></td>
+    <td><span class="bdg b-bl">${n.type||'info'}</span></td>
+    <td><span class="bdg ${n.active?'b-gr':'b-rd'}">${n.active?'Active':'Off'}</span></td>
+    <td style="display:flex;gap:5px;">
+      <button class="btn btn-gh btn-sm" onclick="togAnnounce('${k}',${!n.active})">${n.active?'Off':'On'}</button>
+      <button class="btn btn-dn btn-sm" onclick="delAnnounce('${k}')">Del</button>
+    </td></tr>`).join('');
+}
+async function togAnnounce(k,a){await fbPATCH('/announcements/'+k,{active:a});loadAnnouncements();}
+function delAnnounce(k){showConf('Delete?','Ye announcement delete ho jaayegi.',async()=>{await fbDEL('/announcements/'+k);toast('Deleted');loadAnnouncements();});}
+
+// ═══════════════════════════════════════════════
+// CUSTOM DUAS
+// ═══════════════════════════════════════════════
+async function loadDuaList(){
+  const data=await fbGET('/custom_duas');
+  const el=G('duaList');if(!el)return;
+  if(!data||typeof data!=='object'||!Object.keys(data).length){
+    el.innerHTML='<div class="empty"><div class="ei">🤲</div><div class="et">Koi dua nahi. "Nai Dua" se add karo.</div></div>';return;
+  }
+  const cats={morning:'🌅',evening:'🌇',salah:'🕌',protection:'🛡️',forgiveness:'💚',general:'📿'};
+  const entries=Object.values(data).sort((a,b)=>(a.cat||'').localeCompare(b.cat||''));
+  el.innerHTML=entries.map(d=>`
+    <div style="background:var(--s1);border:1px solid var(--b2);border-radius:12px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:18px;">${cats[d.cat]||'📿'}</span>
+          <div>
+            <span class="bdg b-go" style="font-size:10px;">${d.cat||'general'}</span>
+            <span class="bdg ${d.active?'b-gr':'b-rd'}" style="margin-left:4px;">${d.active?'Active':'Off'}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-gh btn-sm" onclick="editDua('${d.id}')">✏️ Edit</button>
+          <button class="btn btn-dn btn-sm" onclick="delDua('${d.id}')">🗑</button>
+        </div>
+      </div>
+      <div style="font-family:Amiri,serif;font-size:17px;direction:rtl;color:var(--gold2);margin-bottom:5px;">${d.ar||''}</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.5;">${(d.lo&&d.lo.hi)||''}</div>
+      ${d.ref?`<div style="font-size:11px;color:var(--em);margin-top:6px;background:var(--em3);display:inline-block;padding:2px 9px;border-radius:7px;">📖 ${d.ref}</div>`:''}
+    </div>`).join('');
+}
+
+function showDuaForm(){
+  G('editDuaId').value='';
+  ['duaId','duaAr','duaHi','duaEn','duaUr','duaRef'].forEach(id=>{if(G(id))G(id).value='';});
+  if(G('duaActive'))G('duaActive').checked=true;
+  G('duaFormTitle').textContent='Nai Dua Add Karo';
+  G('duaForm').style.display='block';
+  G('duaForm').scrollIntoView({behavior:'smooth'});
+}
+
+function hideDuaForm(){G('duaForm').style.display='none';}
+
+async function editDua(id){
+  const d=await fbGET('/custom_duas/'+id);
+  if(!d)return;
+  G('editDuaId').value=id;
+  G('duaId').value=d.id||id;
+  G('duaAr').value=d.ar||'';
+  G('duaHi').value=(d.lo&&d.lo.hi)||'';
+  G('duaEn').value=(d.lo&&d.lo.en)||'';
+  G('duaUr').value=(d.lo&&d.lo.ur)||'';
+  G('duaRef').value=d.ref||'';
+  if(G('duaCat'))G('duaCat').value=d.cat||'general';
+  if(G('duaActive'))G('duaActive').checked=!!d.active;
+  G('duaFormTitle').textContent='Dua Edit Karo';
+  G('duaForm').style.display='block';
+  G('duaForm').scrollIntoView({behavior:'smooth'});
+}
+
+async function saveDua(){
+  const id=V('duaId'),ar=V('duaAr'),hi=V('duaHi');
+  if(!id){toast('ID zaroori hai','warn');return;}
+  if(!ar){toast('Arabic text zaroori hai','warn');return;}
+  if(!hi){toast('Hindi translation zaroori hai','warn');return;}
+  const origId=G('editDuaId').value;
+  if(origId&&origId!==id) await fbDEL('/custom_duas/'+origId);
+  const data={id,ar,cat:(G('duaCat')&&G('duaCat').value)||'general',ref:V('duaRef'),active:G('duaActive')&&G('duaActive').checked,lo:{hi,en:V('duaEn'),ur:V('duaUr'),ar:ar,bn:''},timestamp:Date.now()};
+  const r=await fbPUT('/custom_duas/'+id,data);
+  if(r){toast('✅ Dua saved!');hideDuaForm();loadDuaList();}
+}
+
+function delDua(id){showConf('Delete Dua?','Ye dua permanently delete ho jaayegi.',async()=>{await fbDEL('/custom_duas/'+id);toast('🗑 Deleted');loadDuaList();});}
+
+// ═══════════════════════════════════════════════
+// APP SETTINGS
+// ═══════════════════════════════════════════════
+const AS_KEYS={asAppName:'as_appname',asTagline:'as_tagline',asPs:'as_ps',asAs:'as_as',asEmail:'as_email',asPrivacy:'as_privacy',asRateDays:'as_ratedays',asRateOpens:'as_rateopens'};
+
+function loadAppSettingsInputs(){
+  Object.entries(AS_KEYS).forEach(([elId,stKey])=>{
+    const el=G(elId);if(el)el.value=localStorage.getItem(stKey)||'';
+  });
+  if(!localStorage.getItem('as_ratedays')&&G('asRateDays'))G('asRateDays').value='3';
+  if(!localStorage.getItem('as_rateopens')&&G('asRateOpens'))G('asRateOpens').value='5';
+}
+
+function saveAppSettings(){
+  Object.entries(AS_KEYS).forEach(([elId,stKey])=>{
+    const el=G(elId);if(el)localStorage.setItem(stKey,el.value);
+  });
+  // Also save to Firebase so app can read remotely
+  fbPUT('/app_settings',{
+    appName:V('asAppName')||'Digital Tasbih',
+    tagline:V('asTagline'),
+    playStoreUrl:V('asPs'),
+    appStoreUrl:V('asAs'),
+    supportEmail:V('asEmail'),
+    privacyUrl:V('asPrivacy'),
+    rateAfterDays:parseInt(V('asRateDays'))||3,
+    rateAfterOpens:parseInt(V('asRateOpens'))||5,
+    updatedAt:Date.now()
+  }).then(r=>{if(r)toast('✅ Settings saved to Firebase!');});
+}
+
+function genAppConfig(){
+  const code=`const APP_CONFIG={
+  playStoreUrl:'${V('asPs')||'https://play.google.com/store/apps/details?id=YOUR.APP.ID'}',
+  appStoreUrl:'${V('asAs')||'https://apps.apple.com/app/YOUR-APP-ID'}',
+  notifRemindDays:${V('asRateDays')||3},
+  rateAfterDays:3,
+  rateAfterOpens:${V('asRateOpens')||5},
+};`;
+  const el=G('appCfgCode');
+  if(el){el.style.display='block';el.textContent=code;}
+  navigator.clipboard.writeText(code).then(()=>toast('📋 Config copied! digital-tasbih.html mein paste karo.'));
+}
+
+async function loadAppStats(){
+  const [d,n,ds,duas,ann]=await Promise.all([
+    fbGET('/extra_dhikr'),fbGET('/notifications'),fbGET('/daily_sections'),fbGET('/custom_duas'),fbGET('/announcements')
+  ]);
+  const count=x=>x&&typeof x==='object'?Object.keys(x).length:0;
+  if(G('statDhikr'))G('statDhikr').textContent=count(d);
+  if(G('statNotif'))G('statNotif').textContent=count(n);
+  if(G('statDaily'))G('statDaily').textContent=count(ds);
+  if(G('statDuas'))G('statDuas').textContent=count(duas);
+  if(G('statAnn'))G('statAnn').textContent=count(ann);
+}
+
+function G(id){return document.getElementById(id);}
+function V(id){return(G(id)?.value||'').trim();}
+
+let ccb=null;
+function showConf(t,b,cb){G('ct').textContent=t;G('cb').textContent=b;ccb=cb;G('conf').classList.add('open');}
+function clsC(){G('conf').classList.remove('open');ccb=null;}
+G('cok').addEventListener('click',()=>{if(ccb)ccb();clsC();});
+
+let tt;
+function toast(msg,type='ok'){
+  const el=G('toast');
+  el.style.borderColor=type==='err'?'var(--red)':type==='warn'?'var(--gold)':'var(--em)';
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>
