@@ -18974,8 +18974,17 @@ function qiblaSetAccuracyState(state){
   QIBLA_STATE.accuracyState=state||'pending';
   QIBLA_STATE.compassStable=state==='good';
 }
+// IMPORTANT: JavaScript ka isFinite(null) === true hai (null → 0 me convert
+// ho jaata hai, aur 0 finite hai) — ye ek classic gotcha hai jo pehle poore
+// Qibla code me bug create kar raha tha: heading kabhi set na hone par bhi
+// (yaani null) ye "valid/finite" samjha jaata tha, isliye needle/NWES hamesha
+// rotate(0deg) pe freeze ho jaate the. Ye helper null/undefined ko pehle hi
+// reject karta hai, phir hi isFinite check karta hai.
+function qiblaIsNum(v){
+  return v!=null && typeof v==='number' && isFinite(v);
+}
 function qiblaHasReliableCompass(){
-  return isFinite(QIBLA_STATE.heading) && !QIBLA_STATE.compassDenied;
+  return qiblaIsNum(QIBLA_STATE.heading) && !QIBLA_STATE.compassDenied;
 }
 function qiblaHeadingJumpAccepted(nextHeading){
   if(nextHeading==null || !isFinite(nextHeading)) return false;
@@ -18983,7 +18992,7 @@ function qiblaHeadingJumpAccepted(nextHeading){
   return true;
 }
 function qiblaUpdateComputedAngles(){
-  if(!isFinite(QIBLA_STATE.bearing)){
+  if(!qiblaIsNum(QIBLA_STATE.bearing)){
     QIBLA_STATE.relative=null;
     QIBLA_STATE.finalAngle=null;
     QIBLA_STATE.aligned=false;
@@ -19111,8 +19120,8 @@ function qiblaStartAnimation(){
   const tick=()=>{
     QIBLA_STATE.animationFrame=0;
     let keepGoing=false;
-    if(qiblaHasReliableCompass() && isFinite(QIBLA_STATE.heading)){
-      if(QIBLA_STATE.displayHeading==null || !isFinite(QIBLA_STATE.displayHeading)){
+    if(qiblaHasReliableCompass() && qiblaIsNum(QIBLA_STATE.heading)){
+      if(QIBLA_STATE.displayHeading==null || !qiblaIsNum(QIBLA_STATE.displayHeading)){
         QIBLA_STATE.displayHeading = QIBLA_STATE.heading;
       }
       const nextHeading=qiblaLerpAngle(QIBLA_STATE.displayHeading,QIBLA_STATE.heading,0.28);
@@ -19122,7 +19131,7 @@ function qiblaStartAnimation(){
     }
     const targetAngle=qiblaHasReliableCompass() ? QIBLA_STATE.relative : QIBLA_STATE.finalAngle;
     if(isFinite(targetAngle)){
-      if(QIBLA_STATE.displayRelative==null || !isFinite(QIBLA_STATE.displayRelative)){
+      if(QIBLA_STATE.displayRelative==null || !qiblaIsNum(QIBLA_STATE.displayRelative)){
         QIBLA_STATE.displayRelative = targetAngle;
       }
       const nextRelative=qiblaLerpAngle(QIBLA_STATE.displayRelative,targetAngle,0.28);
@@ -19146,7 +19155,7 @@ function qiblaApplyHeadingState(correctedHeading,priority,source){
   QIBLA_STATE.sensorType=source||'device';
   const smoothed=qiblaSmoothHeading(QIBLA_STATE.heading,correctedHeading);
   QIBLA_STATE.heading=smoothed;
-  if(QIBLA_STATE.displayHeading==null || !isFinite(QIBLA_STATE.displayHeading)){
+  if(QIBLA_STATE.displayHeading==null || !qiblaIsNum(QIBLA_STATE.displayHeading)){
     QIBLA_STATE.displayHeading=smoothed;
   }
   if(!QIBLA_STATE.calibrationWarning) qiblaSetAccuracyState('good');
@@ -19182,9 +19191,23 @@ function qiblaExtractHeading(event){
 
 function qiblaOnOrientation(event){
   if(!event) return;
-  if(isFinite(event.beta)) QIBLA_STATE.beta = Number(event.beta);
-  if(isFinite(event.gamma)) QIBLA_STATE.gamma = Number(event.gamma);
+  // TEMP DEBUG OVERLAY — raw event data seedha screen pe (hataana hai jab
+  // issue diagnose ho jaaye)
+  try{
+    if(window.__qDebugOverlay){
+      window.__qDebugOverlay.textContent =
+        'type='+event.type+' abs='+event.absolute+
+        ' alpha='+event.alpha+' beta='+event.beta+' gamma='+event.gamma+
+        ' webkitCH='+event.webkitCompassHeading+
+        ' usingAbs='+QIBLA_STATE.usingAbsoluteHeading;
+    }
+  }catch(_){}
+  // NOTE: is phone pe sirf plain 'deviceorientation' hi real alpha deta hai
+  // (deviceorientationabsolute bahut kam/ek-baar fire hota hai) — isliye ab
+  // koi bhi event jo valid alpha de, use accept karte hain. Jitter EMA
+  // smoothing (neeche) se handle hota hai.
   
+
   let heading = null;
   // 1. iOS Safari True North
   if(typeof event.webkitCompassHeading === 'number' && isFinite(event.webkitCompassHeading) && event.webkitCompassHeading >= 0){
@@ -19204,7 +19227,7 @@ function qiblaOnOrientation(event){
   QIBLA_STATE.compassSupported = true;
   
   // Exponential Damping Filter: eliminates sensor noise and stopping shaking/mirgi completely
-  if(QIBLA_STATE.heading == null || !isFinite(QIBLA_STATE.heading)){
+  if(QIBLA_STATE.heading == null || !qiblaIsNum(QIBLA_STATE.heading)){
     QIBLA_STATE.heading = heading;
   } else {
     const diff = qiblaAngleDiff(heading, QIBLA_STATE.heading);
@@ -19215,6 +19238,7 @@ function qiblaOnOrientation(event){
   
   qiblaUpdateComputedAngles();
   updateQiblaLiveUI();
+  qiblaStartAnimation();
 }
 
 function qiblaOnHeadingValue(heading, priority, source){
@@ -19223,7 +19247,7 @@ function qiblaOnHeadingValue(heading, priority, source){
   QIBLA_STATE.sensorReady = true;
   QIBLA_STATE.sensorPermissionNeeded = false;
   QIBLA_STATE.compassSupported = true;
-  if(QIBLA_STATE.heading == null || !isFinite(QIBLA_STATE.heading)){
+  if(QIBLA_STATE.heading == null || !qiblaIsNum(QIBLA_STATE.heading)){
     QIBLA_STATE.heading = heading;
   } else {
     const diff = qiblaAngleDiff(heading, QIBLA_STATE.heading);
@@ -19233,6 +19257,7 @@ function qiblaOnHeadingValue(heading, priority, source){
   }
   qiblaUpdateComputedAngles();
   updateQiblaLiveUI();
+  qiblaStartAnimation();
 }
 
 function qiblaStartMagnetometerMonitor(){
@@ -19253,11 +19278,23 @@ function qiblaStartMagnetometerMonitor(){
 }
 
 function qiblaStartCompass(){
+  // TEMP DEBUG OVERLAY (hataana hai jab diagnose ho jaaye)
+  try{
+    if(!window.__qDebugOverlay){
+      const d=document.createElement('div');
+      d.id='__qDebugOverlay';
+      d.style.cssText='position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:6px;z-index:999999;white-space:pre-wrap;font-family:monospace;';
+      d.textContent='waiting for sensor events...';
+      document.body.appendChild(d);
+      window.__qDebugOverlay=d;
+    }
+  }catch(_){}
   if(QIBLA_STATE.sensorListening) return;
   const hasOrientation = 'DeviceOrientationEvent' in window;
   QIBLA_STATE.compassSupported = hasOrientation;
   QIBLA_STATE.error = '';
   QIBLA_STATE.compassDenied = false;
+  QIBLA_STATE.usingAbsoluteHeading = false;
   if(!hasOrientation) return;
 
   // Kai browsers/WebViews (khaaskar Android WebView/Cordova) 'ondeviceorientationabsolute'
@@ -19443,7 +19480,7 @@ function qiblaDirectionHint(){
     if(!QIBLA_STATE.sensorReady) return T('q_hold_flat') || 'Hold phone flat';
     if(!qiblaHasReliableCompass()) return T('q_hold_flat') || 'Hold phone flat';
     if(!qiblaPhoneIsFlat()) return T('q_flat_phone') || 'Keep phone flat';
-    if(QIBLA_STATE.relative==null || !isFinite(QIBLA_STATE.relative)) return T('q_hold_flat') || 'Hold phone flat';
+    if(QIBLA_STATE.relative==null || !qiblaIsNum(QIBLA_STATE.relative)) return T('q_hold_flat') || 'Hold phone flat';
     if(Math.abs(QIBLA_STATE.relative)<=3) return T('q_aligned') || 'Facing Qibla';
     const deg=Math.max(1,Math.round(Math.abs(QIBLA_STATE.relative)));
     const rightStr = T('q_turn_right') || 'Turn right {deg}°';
@@ -19491,7 +19528,7 @@ function qiblaStatusMessage(){
   if(QIBLA_STATE.sensorPermissionNeeded) return T('q_tap_compass');
   if(!QIBLA_STATE.compassSupported || QIBLA_STATE.compassDenied) return T('q_static_mode');
   if(QIBLA_STATE.calibrationWarning){
-    const field=isFinite(QIBLA_STATE.fieldStrength)?` (${QIBLA_STATE.fieldStrength.toFixed(1)} µT)`:'';
+    const field=qiblaIsNum(QIBLA_STATE.fieldStrength)?` (${QIBLA_STATE.fieldStrength.toFixed(1)} µT)`:'';
     return `${T('q_calibration_required')}: ${T('q_magnetic_warn')} ${T('q_calibrate')}${field}`;
   }
   if(!QIBLA_STATE.sensorReady) return T('q_hold_flat');
@@ -19512,7 +19549,7 @@ function qiblaMapBannerHtml(){
   const y=118;
   const locationLabel=calendarEscape(PRAYER_STATE.locationLabel||T('q_you'));
   const qLabel=`${calendarEscape(T('q_makkah'))} · ${QIBLA_KAABA.lat.toFixed(4)}, ${QIBLA_KAABA.lon.toFixed(4)}`;
-  const uLabel=isFinite(QIBLA_STATE.lat)&&isFinite(QIBLA_STATE.lon)
+  const uLabel=qiblaIsNum(QIBLA_STATE.lat)&&qiblaIsNum(QIBLA_STATE.lon)
     ? `${locationLabel} · ${QIBLA_STATE.lat.toFixed(4)}, ${QIBLA_STATE.lon.toFixed(4)}`
     : locationLabel;
   return `<svg viewBox="0 0 900 260" aria-label="Qibla route map" style="width:100%;height:100%;display:block" xmlns="http://www.w3.org/2000/svg">
@@ -19562,7 +19599,7 @@ function qiblaMapBannerHtml(){
   </svg>`;
 }
 function qiblaMapIframeHtml(){
-  if(!isFinite(QIBLA_STATE.lat) || !isFinite(QIBLA_STATE.lon)) return qiblaMapBannerHtml();
+  if(!qiblaIsNum(QIBLA_STATE.lat) || !qiblaIsNum(QIBLA_STATE.lon)) return qiblaMapBannerHtml();
   const minLat=Math.min(QIBLA_STATE.lat,QIBLA_KAABA.lat)-6;
   const maxLat=Math.max(QIBLA_STATE.lat,QIBLA_KAABA.lat)+6;
   const minLon=Math.min(QIBLA_STATE.lon,QIBLA_KAABA.lon)-8;
@@ -19573,13 +19610,13 @@ function qiblaMapIframeHtml(){
 }
 function qiblaCompassHtml(){
   const hasCompass=qiblaHasReliableCompass();
-  const heading=hasCompass && isFinite(QIBLA_STATE.displayHeading)?QIBLA_STATE.displayHeading:(hasCompass && isFinite(QIBLA_STATE.heading)?QIBLA_STATE.heading:0);
-  const bearing=isFinite(QIBLA_STATE.bearing)?QIBLA_STATE.bearing:0;
+  const heading=hasCompass && qiblaIsNum(QIBLA_STATE.displayHeading)?QIBLA_STATE.displayHeading:(hasCompass && qiblaIsNum(QIBLA_STATE.heading)?QIBLA_STATE.heading:0);
+  const bearing=qiblaIsNum(QIBLA_STATE.bearing)?QIBLA_STATE.bearing:0;
   const aligned=QIBLA_STATE.aligned;
   const tone=qiblaAlignmentTone();
   const arrowAngle=hasCompass
-    ? (isFinite(QIBLA_STATE.displayRelative)?QIBLA_STATE.displayRelative:(isFinite(QIBLA_STATE.relative)?QIBLA_STATE.relative:bearing))
-    : (isFinite(QIBLA_STATE.finalAngle)?QIBLA_STATE.finalAngle:bearing);
+    ? (qiblaIsNum(QIBLA_STATE.displayRelative)?QIBLA_STATE.displayRelative:(qiblaIsNum(QIBLA_STATE.relative)?QIBLA_STATE.relative:bearing))
+    : (qiblaIsNum(QIBLA_STATE.finalAngle)?QIBLA_STATE.finalAngle:bearing);
   return `
     <div class="qq-compass-shell">
       <div class="qq-top-guideline${aligned?' aligned':''}"></div>
@@ -19599,9 +19636,9 @@ function qiblaCompassHtml(){
 }
 function qiblaScreenStatusChips(){
   const hasCompass=qiblaHasReliableCompass();
-  const bearing=isFinite(QIBLA_STATE.bearing)?`${Math.round(QIBLA_STATE.bearing)}°`:'—';
-  const heading=hasCompass && isFinite(QIBLA_STATE.heading)?`${Math.round(QIBLA_STATE.heading)}°`:'—';
-  const finalAngle=isFinite(QIBLA_STATE.finalAngle)?`${Math.round(QIBLA_STATE.finalAngle)}°`:'—';
+  const bearing=qiblaIsNum(QIBLA_STATE.bearing)?`${Math.round(QIBLA_STATE.bearing)}°`:'—';
+  const heading=hasCompass && qiblaIsNum(QIBLA_STATE.heading)?`${Math.round(QIBLA_STATE.heading)}°`:'—';
+  const finalAngle=qiblaIsNum(QIBLA_STATE.finalAngle)?`${Math.round(QIBLA_STATE.finalAngle)}°`:'—';
   const accuracy=QIBLA_STATE.accuracyState==='good'?T('q_accuracy_good'):(QIBLA_STATE.accuracyState==='bad'?T('q_accuracy_bad'):qiblaFormatAccuracy(QIBLA_STATE.accuracy));
   const distance=QIBLA_STATE.distanceKm!=null?qiblaFormatDistance(QIBLA_STATE.distanceKm):'—';
   const sourceChip=(QIBLA_STATE.source==='live'?T('q_live'):T('q_saved'));
@@ -19620,9 +19657,9 @@ function qiblaScreenStatusChips(){
     </div>`;
 }
 function qiblaDebugHtml(){
-  const qiblaAngle=isFinite(QIBLA_STATE.bearing)?Math.round(QIBLA_STATE.bearing):'—';
-  const heading=isFinite(QIBLA_STATE.heading)?Math.round(QIBLA_STATE.heading):'—';
-  const finalAngle=isFinite(QIBLA_STATE.finalAngle)?Math.round(QIBLA_STATE.finalAngle):'—';
+  const qiblaAngle=qiblaIsNum(QIBLA_STATE.bearing)?Math.round(QIBLA_STATE.bearing):'—';
+  const heading=qiblaIsNum(QIBLA_STATE.heading)?Math.round(QIBLA_STATE.heading):'—';
+  const finalAngle=qiblaIsNum(QIBLA_STATE.finalAngle)?Math.round(QIBLA_STATE.finalAngle):'—';
   const status=QIBLA_STATE.accuracyState==='good'?T('q_accuracy_good'):(QIBLA_STATE.accuracyState==='bad'?T('q_accuracy_bad'):'—');
   return `<div id="qDebugBox" class="qq-debug"><b>${T('q_debug')}</b><span>${T('q_bearing')}: ${qiblaAngle}°</span><span>${T('q_heading')}: ${heading}°</span><span>${T('q_final_angle')}: ${finalAngle}°</span><span>${T('q_accuracy')}: ${status}</span></div>`;
 }
@@ -19645,7 +19682,7 @@ function qiblaScreenRoute(){
 function renderQiblaMap(){
   const host=document.getElementById('qiblaMap');
   if(!host) return;
-  if(!isFinite(QIBLA_STATE.lat) || !isFinite(QIBLA_STATE.lon)){
+  if(!qiblaIsNum(QIBLA_STATE.lat) || !qiblaIsNum(QIBLA_STATE.lon)){
     qiblaDestroyMap();
     host.innerHTML=qiblaMapBannerHtml();
     return;
@@ -19692,15 +19729,34 @@ function renderQiblaMap(){
 }
 function updateQiblaLiveUI(){
   const hasCompass=qiblaHasReliableCompass();
-  const shownHeading=hasCompass ? (isFinite(QIBLA_STATE.displayHeading)?QIBLA_STATE.displayHeading:QIBLA_STATE.heading) : 0;
+  const shownHeading=hasCompass ? (qiblaIsNum(QIBLA_STATE.displayHeading)?QIBLA_STATE.displayHeading:QIBLA_STATE.heading) : 0;
   const heading=hasCompass && isFinite(shownHeading)?`${Math.round(shownHeading)}°`:'—';
-  const bearing=isFinite(QIBLA_STATE.bearing)?`${Math.round(QIBLA_STATE.bearing)}°`:'—';
+  const bearing=qiblaIsNum(QIBLA_STATE.bearing)?`${Math.round(QIBLA_STATE.bearing)}°`:'—';
   const distance=QIBLA_STATE.distanceKm!=null?qiblaFormatDistance(QIBLA_STATE.distanceKm):'—';
   const accuracy=QIBLA_STATE.accuracyState==='good'?T('q_accuracy_good'):(QIBLA_STATE.accuracyState==='bad'?T('q_accuracy_bad'):(QIBLA_STATE.pending?T('q_geo_loading'):'—'));
-  const finalAngle=isFinite(QIBLA_STATE.finalAngle)?`${Math.round(QIBLA_STATE.finalAngle)}°`:'—';
+  const finalAngle=qiblaIsNum(QIBLA_STATE.finalAngle)?`${Math.round(QIBLA_STATE.finalAngle)}°`:'—';
   const arrowWrap=document.getElementById('qArrowWrap');
   const innerRotator=document.getElementById('qInnerRotator');
   if(innerRotator) innerRotator.style.transform=`translate(-50%,-50%) rotate(${-(shownHeading||0)}deg)`;
+  // TEMP DEBUG (hataana hai baad me)
+  try{
+    if(window.__qDebugOverlay2){
+      window.__qDebugOverlay2.textContent =
+        'hasCompass='+hasCompass+
+        ' rawHeading='+QIBLA_STATE.heading+
+        ' displayHeading='+QIBLA_STATE.displayHeading+
+        ' shownHeading='+shownHeading+
+        ' compassDenied='+QIBLA_STATE.compassDenied+
+        ' innerRotatorFound='+(!!innerRotator)+
+        ' arrowWrapFound='+(!!arrowWrap);
+    } else if(document.body){
+      const d=document.createElement('div');
+      d.id='__qDebugOverlay2';
+      d.style.cssText='position:fixed;top:20px;left:0;right:0;background:#000;color:#0ff;font-size:11px;padding:6px;z-index:999999;white-space:pre-wrap;font-family:monospace;';
+      document.body.appendChild(d);
+      window.__qDebugOverlay2=d;
+    }
+  }catch(_){}
   const topGuide=document.querySelector('.qq-top-guideline');
   const hint=document.getElementById('qHintText');
   const statusBox=document.getElementById('qStatusBox');
@@ -19719,7 +19775,7 @@ function updateQiblaLiveUI(){
   const compass=document.querySelector('.qq-compass');
   const tone=qiblaAlignmentTone();
   const arrowAngle=hasCompass
-    ? (isFinite(QIBLA_STATE.displayRelative)?QIBLA_STATE.displayRelative:(isFinite(QIBLA_STATE.relative)?QIBLA_STATE.relative:(QIBLA_STATE.finalAngle||0)))
+    ? (qiblaIsNum(QIBLA_STATE.displayRelative)?QIBLA_STATE.displayRelative:(qiblaIsNum(QIBLA_STATE.relative)?QIBLA_STATE.relative:(QIBLA_STATE.finalAngle||0)))
     : (QIBLA_STATE.finalAngle||QIBLA_STATE.bearing||0);
   if(arrowWrap) arrowWrap.style.transform=`translate(-50%,-50%) rotate(${arrowAngle}deg)`;
   if(topGuide) topGuide.classList.toggle('aligned',!!QIBLA_STATE.aligned);
